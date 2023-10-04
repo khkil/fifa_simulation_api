@@ -15,6 +15,7 @@ public class BatchController {
 
     @PostMapping("/players")
     public ResponseEntity createPlayers(){
+        batchService.createSeasons();
         batchService.createPlayers();
         return ResponseEntity.ok("dd");
     }

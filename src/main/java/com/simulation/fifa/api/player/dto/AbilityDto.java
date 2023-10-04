@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.player.dto;
 
+import com.simulation.fifa.api.player.entity.Player;
 import lombok.Data;
 
 public class AbilityDto {
@@ -36,15 +37,57 @@ public class AbilityDto {
         private int determination;
         private int jumping;
         private int composure;
-        private int GKdiving;
-        private int GKhandling;
-        private int GKkicking;
-        private int GKreflexes;
-        private int GKpositioning;
+        private int gkDiving;
+        private int gkHandling;
+        private int gkKicking;
+        private int gkReflexes;
+        private int gkPositioning;
 
         public Detail(Long spId, String name) {
             this.spId = spId;
             this.name = name;
+        }
+
+        public Player toEntity() {
+            return Player
+                    .builder()
+                    .id(spId)
+                    .name(name)
+                    .speed(speed)
+                    .acceleration(acceleration)
+                    .finishing(finishing)
+                    .shootPower(shootPower)
+                    .longShoot(longShoot)
+                    .positioning(positioning)
+                    .volleyShoot(volleyShoot)
+                    .penaltyKick(penaltyKick)
+                    .shortPass(shortPass)
+                    .vision(vision)
+                    .crossing(crossing)
+                    .longPass(longPass)
+                    .freeKick(freeKick)
+                    .curve(curve)
+                    .dribble(dribble)
+                    .ballControl(ballControl)
+                    .agility(agility)
+                    .balance(balance)
+                    .reactionSpeed(reactionSpeed)
+                    .defending(defending)
+                    .tackling(tackling)
+                    .interception(interception)
+                    .heading(heading)
+                    .slideTackle(slideTackle)
+                    .physicality(physicality)
+                    .stamina(stamina)
+                    .determination(determination)
+                    .jumping(jumping)
+                    .composure(composure)
+                    .gkDiving(gkDiving)
+                    .gkHandling(gkHandling)
+                    .gkKicking(gkKicking)
+                    .gkReflexes(gkReflexes)
+                    .gkPositioning(gkPositioning)
+                    .build();
         }
 
         public void setValueFromText(String text, int value) {
@@ -107,15 +150,15 @@ public class AbilityDto {
             }else if(text.equals("침착성")){
                 this.composure = value;
             }else if(text.equals("GK 다이빙")){
-                this.GKdiving = value;
+                this.gkDiving = value;
             }else if(text.equals("GK 핸들링")){
-                this.GKhandling = value;
+                this.gkHandling = value;
             }else if(text.equals("GK 킥")){
-                this.GKkicking = value;
+                this.gkKicking = value;
             }else if(text.equals("GK 반응속도")){
-                this.GKreflexes = value;
+                this.gkReflexes = value;
             }else if(text.equals("GK 위치 선정")){
-                this.GKpositioning = value;
+                this.gkPositioning = value;
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.player.dto;
+package com.simulation.fifa.api.batch.dto;
 
 import lombok.Data;
 
