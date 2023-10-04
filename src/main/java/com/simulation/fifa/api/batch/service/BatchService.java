@@ -52,11 +52,12 @@ public class BatchService {
     }
 
     public void createPlayers() {
+        List<Player> players = new ArrayList<>();
+
+        Map<Long, Season> seasonMap = seasonRepository.findAll().stream().collect(Collectors.toMap(Season::getId, season -> season));
         List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 10);
 
-        List<Player> players = new ArrayList<>();
-        List<Season> seasons = seasonRepository.findAll();
-        Map<Long, Season> seasonMap = seasons.stream().collect(Collectors.toMap(Season::getId, season -> season));
+
         for(SpIdDto spidDto : spIdList) {
             Long spId = spidDto.getId();
             try {
