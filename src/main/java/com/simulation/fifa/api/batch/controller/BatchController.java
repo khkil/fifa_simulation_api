@@ -13,8 +13,20 @@ public class BatchController {
     @Autowired
     BatchService batchService;
 
+    @PostMapping
+    public ResponseEntity createNations() {
+        return ResponseEntity.ok("nation");
+    }
+
+    @PostMapping("/clubs")
+    public ResponseEntity createClubs() {
+        batchService.createLeagues();
+        batchService.createClubs();
+        return ResponseEntity.ok("league");
+    }
+
     @PostMapping("/players")
-    public ResponseEntity createPlayers(){
+    public ResponseEntity createPlayers() {
         batchService.createSeasons();
         batchService.createPlayers();
         return ResponseEntity.ok("dd");
