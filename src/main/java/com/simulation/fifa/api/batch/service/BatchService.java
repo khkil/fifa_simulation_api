@@ -7,13 +7,13 @@ import com.simulation.fifa.api.association.repository.PlayerClubAssociationRepos
 import com.simulation.fifa.api.association.repository.PlayerPositionAssociationRepository;
 import com.simulation.fifa.api.association.repository.PlayerSkillAssociationRepository;
 import com.simulation.fifa.api.batch.dto.SeasonIdDto;
+import com.simulation.fifa.api.batch.dto.SpIdDto;
 import com.simulation.fifa.api.batch.dto.SpPositionDto;
 import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.club.repository.ClubRepository;
 import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.league.repository.LeagueRepository;
 import com.simulation.fifa.api.player.dto.PlayerDto;
-import com.simulation.fifa.api.batch.dto.SpIdDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.domain.Position;
@@ -39,9 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -79,6 +77,7 @@ public class BatchService {
             Elements elements = document.getElementsByClass("wrap_league").get(0).getElementsByTag("a");
             for (Element el : elements) {
                 long leagueId = parseLeagueId(el);
+                // 리그 0(해당없음) or -1(리그가 없거나 파싱오류 발생) 일 경우 skip
                 if (leagueId <= 0) continue;
 
                 String leagueName = el.getElementsByTag("span").html();
@@ -91,10 +90,10 @@ public class BatchService {
                 leagues.add(league);
             }
         } catch (IOException e) {
-            System.out.println(e);
+            log.error("리그 생성 오류 {0}", e);
+        } finally {
+            leagueRepository.saveAll(leagues);
         }
-
-        leagueRepository.saveAll(leagues);
     }
 
     public void createClubs() {
@@ -129,9 +128,9 @@ public class BatchService {
 
         } catch (IOException e) {
             log.error(e.getMessage());
+        } finally {
+            clubRepository.saveAll(clubs);
         }
-
-        clubRepository.saveAll(clubs);
     }
 
     public void createPositions() {
@@ -204,58 +203,47 @@ public class BatchService {
 
 
                 // 선수 포지션 설정
-                List<String> positions = document.getElementsByClass("info_ab").get(0).getElementsByClass("position").stream().map(v -> v.getElementsByClass("txt").get(0).html()).toList();
-                for (String key : positions) {
-                    Position position = positionMap.get(key);
-                    PlayerPositionAssociation playerPositionAssociation = PlayerPositionAssociation
-                            .builder()
-                            .player(player)
-                            .position(position)
-                            .build();
+                playerPositionAssociations = document.getElementsByClass("info_ab").get(0).getElementsByClass("position")
+                        .stream()
+                        .map(el -> PlayerPositionAssociation
+                                .builder()
+                                .player(player)
+                                .position(positionMap.get(el.getElementsByClass("txt").get(0).html()))
+                                .build()
+                        )
+                        .toList();
 
-                    playerPositionAssociations.add(playerPositionAssociation);
-                }
 
                 // 선수 클럽 설정
-                Elements clubs = document.getElementsByClass("data_detail_club").get(0).getElementsByTag("li");
-                for (Element el : clubs) {
-                    String clubName = el.getElementsByClass("club").html();
-                    String[] years = el.getElementsByClass("year").html().split("~");
+                playerClubAssociations = document.getElementsByClass("data_detail_club").get(0).getElementsByTag("li")
+                        .stream()
+                        .map(el -> {
+                                    String clubName = el.getElementsByClass("club").html();
+                                    String[] years = el.getElementsByClass("year").html().split("~");
 
-                    Integer startYear = null;
-                    Integer endYear = null;
-                    if (years.length == 2) {
-                        startYear = Integer.parseInt(years[0].trim());
-                        endYear = Integer.parseInt(years[1].trim());
-                    } else if (years.length == 1) {
-                        startYear = Integer.parseInt(years[0].trim());
-                    }
-                    Club club = clubMap.get(clubName);
+                                    return PlayerClubAssociation
+                                            .builder()
+                                            .player(player)
+                                            .startYear(years.length < 1 ? null : Integer.parseInt(years[0].trim()))
+                                            .endYear(years.length < 2 ? null : Integer.parseInt(years[1].trim()))
+                                            .club(clubMap.get(clubName))
+                                            .build();
+                                }
+                        )
+                        .toList();
 
-                    PlayerClubAssociation playerClubAssociation = PlayerClubAssociation
-                            .builder()
-                            .player(player)
-                            .club(club)
-                            .startYear(startYear)
-                            .endYear(endYear)
-                            .build();
-
-                    playerClubAssociations.add(playerClubAssociation);
-                }
 
                 // 선수 스킬 설정
-                List<String> skills = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span").stream().map(Element::html).toList();
-                for (String key : skills) {
-                    Skill skill = skillMap.get(key);
-                    PlayerSkillAssociation playerSkillAssociation = PlayerSkillAssociation
-                            .builder()
-                            .player(player)
-                            .skill(skill)
-                            .build();
-
-                    playerSkillAssociations.add(playerSkillAssociation);
-                }
-                playerInfo.setSkills(String.join(", ", skills));
+                playerSkillAssociations = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span")
+                        .stream()
+                        //.map(Element::html)
+                        .map(el -> PlayerSkillAssociation
+                                .builder()
+                                .player(player)
+                                .skill(skillMap.get(el.html()))
+                                .build()
+                        )
+                        .toList();
 
                 players.add(player);
             } catch (IOException e) {
@@ -266,8 +254,6 @@ public class BatchService {
                 playerClubAssociationRepository.saveAll(playerClubAssociations);
                 playerSkillAssociationRepository.saveAll(playerSkillAssociations);
             }
-
-
         }
     }
 

@@ -18,8 +18,6 @@ public class Player {
 
     private String name;
 
-    private String abilities;
-
     private int speed;
 
     private int acceleration;

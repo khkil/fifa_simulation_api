@@ -8,7 +8,6 @@ public class PlayerDto {
     public static class Detail {
         private Long spId;
         private String name;
-        private String skills;
         private int speed;
         private int acceleration;
         private int finishing;
@@ -54,7 +53,6 @@ public class PlayerDto {
                     .builder()
                     .id(detail.spId)
                     .name(detail.name)
-                    .abilities(detail.skills)
                     .speed(detail.speed)
                     .acceleration(detail.acceleration)
                     .finishing(detail.finishing)
