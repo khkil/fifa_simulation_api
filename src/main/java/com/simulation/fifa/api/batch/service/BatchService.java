@@ -1,14 +1,17 @@
 package com.simulation.fifa.api.batch.service;
 
 import com.simulation.fifa.api.batch.dto.SeasonIdDto;
+import com.simulation.fifa.api.batch.dto.SpPositionDto;
 import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.club.repository.ClubRepository;
 import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.league.repository.LeagueRepository;
-import com.simulation.fifa.api.player.dto.AbilityDto;
+import com.simulation.fifa.api.player.dto.PlayerDto;
 import com.simulation.fifa.api.batch.dto.SpIdDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
+import com.simulation.fifa.api.position.domain.Position;
+import com.simulation.fifa.api.position.repository.PositionRepository;
 import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.util.RegexUtil;
@@ -25,11 +28,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,25 +51,26 @@ public class BatchService {
     LeagueRepository leagueRepository;
     @Autowired
     PlayerRepository playerRepository;
+    @Autowired
+    PositionRepository positionRepository;
 
     public void createLeagues() {
         List<League> leagues = new ArrayList<>();
         try {
-
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
             Elements elements = document.getElementsByClass("wrap_league").get(0).getElementsByTag("a");
             for (Element el : elements) {
                 long leagueId = parseLeagueId(el);
-                if (leagueId > 0) {
-                    String leagueName = el.getElementsByTag("span").html();
-                    League league = League
-                            .builder()
-                            .id(leagueId)
-                            .leagueName(leagueName)
-                            .build();
+                if (leagueId > 0) continue;
 
-                    leagues.add(league);
-                }
+                String leagueName = el.getElementsByTag("span").html();
+                League league = League
+                        .builder()
+                        .id(leagueId)
+                        .leagueName(leagueName)
+                        .build();
+
+                leagues.add(league);
             }
         } catch (IOException e) {
             System.out.println(e);
@@ -89,12 +91,12 @@ public class BatchService {
                 long leagueId = parseLeagueId(el);
 
                 if (leagueId <= 0) continue;
+
                 League league = leagueMap.get(leagueId);
                 if (league == null) continue;
-                
+
                 long clubId = Long.parseLong(RegexUtil.extractNumbers(el.attr("onclick")));
                 String clubName = el.getElementsByTag("span").html();
-
 
                 Club club = Club
                         .builder()
@@ -113,15 +115,13 @@ public class BatchService {
         clubRepository.saveAll(clubs);
     }
 
-    public void createSeasons() {
-        List<Season> seasons = getSeasonIdList().stream().map(v -> Season
-                .builder()
-                .id(v.getSeasonId())
-                .name(v.getClassName())
-                .imageUrl(v.getSeasonImg())
-                .build()
-        ).toList();
+    public void createPositions() {
+        List<Position> positions = getPositions().stream().map(p -> p.toEntity(p)).toList();
+        positionRepository.saveAll(positions);
+    }
 
+    public void createSeasons() {
+        List<Season> seasons = getSeasonIdList().stream().map(v -> v.toEntity(v)).toList();
         seasonRepository.saveAll(seasons);
     }
 
@@ -129,25 +129,35 @@ public class BatchService {
         List<Player> players = new ArrayList<>();
 
         Map<Long, Season> seasonMap = seasonRepository.findAll().stream().collect(Collectors.toMap(Season::getId, season -> season));
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 10);
+        Map<Long, Position> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getId, position -> position));
 
+        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 50);
 
         for (SpIdDto spidDto : spIdList) {
             Long spId = spidDto.getId();
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
                 //Element positionEl = document.getElementsByClass("position_tabs").get(0);
-                Elements abilities = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
-                AbilityDto.Detail abilityInfo = new AbilityDto.Detail(spidDto.getId(), spidDto.getName());
+                Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
+                PlayerDto.Detail playerInfo = new PlayerDto.Detail(spidDto.getId(), spidDto.getName());
 
-                for (Element ability : abilities) {
-                    String name = ability.getElementsByClass("txt").get(0).html();
-                    String value = RegexUtil.extractNumbers(ability.getElementsByClass("value").get(0).html());
+                // 선수 능력치 설정
+                for (Element stat : stats) {
+                    String name = stat.getElementsByClass("txt").get(0).html();
+                    String value = RegexUtil.extractNumbers(stat.getElementsByClass("value").get(0).html());
 
-                    abilityInfo.setValueFromText(name, Integer.parseInt(value));
+                    playerInfo.setValueFromText(name, Integer.parseInt(value));
                 }
-                Player player = abilityInfo.toEntity();
 
+                // 선수 포지션 설정
+
+                // 선수 스킬 설정
+                List<String> skills = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span").stream().map(Element::html).toList();
+                playerInfo.setSkills(String.join(", ", skills));
+
+                Player player = playerInfo.toEntity(playerInfo);
+
+                // 선수 시즌 설정
                 Long seasonId = Long.parseLong(spId.toString().substring(0, 3));
                 Season season = seasonMap.get(seasonId);
                 player.updateSeason(season);
@@ -174,6 +184,23 @@ public class BatchService {
                 )
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<SeasonIdDto>>() {
+                })
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())))
+                .block();
+    }
+
+    private List<SpPositionDto> getPositions() {
+        return webClient
+                .mutate()
+                .baseUrl(staticApiUrl)
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fconline/latest/spposition.json")
+                        .build()
+                )
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<SpPositionDto>>() {
                 })
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())))
                 .block();

@@ -28,6 +28,17 @@ public class BatchController {
     @PostMapping("/players")
     public ResponseEntity createPlayers() {
         batchService.createSeasons();
+        batchService.createPositions();
+        batchService.createPlayers();
+        return ResponseEntity.ok("dd");
+    }
+
+    @PostMapping("/all")
+    public ResponseEntity createAll() {
+        batchService.createLeagues();
+        batchService.createClubs();
+        batchService.createSeasons();
+        batchService.createPositions();
         batchService.createPlayers();
         return ResponseEntity.ok("dd");
     }

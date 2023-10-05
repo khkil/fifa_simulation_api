@@ -1,10 +1,8 @@
 package com.simulation.fifa.api.player.entity;
 
+import com.simulation.fifa.api.position.domain.Position;
 import com.simulation.fifa.api.season.entity.Season;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +17,8 @@ public class Player {
     private Long id;
 
     private String name;
+
+    private String abilities;
 
     private int speed;
 
