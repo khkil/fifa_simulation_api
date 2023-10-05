@@ -8,40 +8,40 @@ public class PlayerDto {
     public static class Detail {
         private Long spId;
         private String name;
-        private int speed;
-        private int acceleration;
-        private int finishing;
-        private int shootPower;
-        private int longShoot;
-        private int positioning;
-        private int volleyShoot;
-        private int penaltyKick;
-        private int shortPass;
-        private int vision;
-        private int crossing;
-        private int longPass;
-        private int freeKick;
-        private int curve;
-        private int dribble;
-        private int ballControl;
-        private int agility;
-        private int balance;
-        private int reactionSpeed;
-        private int defending;
-        private int tackling;
-        private int interception;
-        private int heading;
-        private int slideTackle;
-        private int physicality;
-        private int stamina;
-        private int determination;
-        private int jumping;
-        private int composure;
-        private int gkDiving;
-        private int gkHandling;
-        private int gkKicking;
-        private int gkReflexes;
-        private int gkPositioning;
+        private Integer speed;
+        private Integer acceleration;
+        private Integer finishing;
+        private Integer shootPower;
+        private Integer longShoot;
+        private Integer positioning;
+        private Integer volleyShoot;
+        private Integer penaltyKick;
+        private Integer shortPass;
+        private Integer vision;
+        private Integer crossing;
+        private Integer longPass;
+        private Integer freeKick;
+        private Integer curve;
+        private Integer dribble;
+        private Integer ballControl;
+        private Integer agility;
+        private Integer balance;
+        private Integer reactionSpeed;
+        private Integer defending;
+        private Integer tackling;
+        private Integer Integererception;
+        private Integer heading;
+        private Integer slideTackle;
+        private Integer physicality;
+        private Integer stamina;
+        private Integer determination;
+        private Integer jumping;
+        private Integer composure;
+        private Integer gkDiving;
+        private Integer gkHandling;
+        private Integer gkKicking;
+        private Integer gkReflexes;
+        private Integer gkPositioning;
 
         public Detail(Long spId, String name) {
             this.spId = spId;
@@ -74,7 +74,7 @@ public class PlayerDto {
                     .reactionSpeed(detail.reactionSpeed)
                     .defending(detail.defending)
                     .tackling(detail.tackling)
-                    .interception(detail.interception)
+                    .Integererception(detail.Integererception)
                     .heading(detail.heading)
                     .slideTackle(detail.slideTackle)
                     .physicality(detail.physicality)
@@ -90,7 +90,7 @@ public class PlayerDto {
                     .build();
         }
 
-        public void setValueFromText(String text, int value) {
+        public void setValueFromText(String text, Integer value) {
             if (text.equals("속력")) {
                 this.speed = value;
             } else if (text.equals("가속력")) {
@@ -134,7 +134,7 @@ public class PlayerDto {
             } else if (text.equals("태클")) {
                 this.tackling = value;
             } else if (text.equals("가로채기")) {
-                this.interception = value;
+                this.Integererception = value;
             } else if (text.equals("헤더")) {
                 this.heading = value;
             } else if (text.equals("슬라이딩 태클")) {

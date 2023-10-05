@@ -23,6 +23,7 @@ import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
 import com.simulation.fifa.api.skill.repository.SkillRepository;
 import com.simulation.fifa.util.RegexUtil;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -31,6 +32,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -314,6 +316,38 @@ public class BatchService {
         } catch (NumberFormatException e) {
             log.error("리그 아이디 파싱 오류 {0}", e);
             return -1;
+        }
+    }
+
+    @Transactional
+    public void bulkTest() {
+        List<Player> players = new ArrayList<>();
+        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 50);
+
+        for (SpIdDto spidDto : spIdList) {
+            Long spId = spidDto.getId();
+            try {
+                Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
+
+                PlayerDto.Detail playerInfo = new PlayerDto.Detail(spidDto.getId(), spidDto.getName());
+
+                // 선수 능력치 설정
+                Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
+                for (Element stat : stats) {
+                    String name = stat.getElementsByClass("txt").get(0).html();
+                    String value = RegexUtil.extractNumbers(stat.getElementsByClass("value").get(0).html());
+
+                    playerInfo.setValueFromText(name, Integer.parseInt(value));
+                }
+
+                Player player = playerInfo.toEntity(playerInfo);
+
+                players.add(player);
+            } catch (IOException e) {
+                log.error("선수 생성 오류 {0}", e);
+            } finally {
+                playerRepository.saveAll(players);
+            }
         }
     }
 }

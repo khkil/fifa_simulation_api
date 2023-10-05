@@ -3,6 +3,7 @@ package com.simulation.fifa.api.batch.controller;
 import com.simulation.fifa.api.batch.service.BatchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,5 +43,11 @@ public class BatchController {
         batchService.createSkills();
         batchService.createPlayers();
         return ResponseEntity.ok("dd");
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity bulk() {
+        batchService.bulkTest();
+        return ResponseEntity.ok("bulk");
     }
 }

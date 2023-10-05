@@ -3,88 +3,87 @@ package com.simulation.fifa.api.player.entity;
 import com.simulation.fifa.api.position.domain.Position;
 import com.simulation.fifa.api.season.entity.Season;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Player {
+@Getter
+public class Player /*implements Persistable<Long>*/ {
     @Id
     private Long id;
 
     private String name;
 
-    private int speed;
+    private Integer speed;
 
-    private int acceleration;
+    private Integer acceleration;
 
-    private int finishing;
+    private Integer finishing;
 
-    private int shootPower;
+    private Integer shootPower;
 
-    private int longShoot;
+    private Integer longShoot;
 
-    private int positioning;
+    private Integer positioning;
 
-    private int volleyShoot;
+    private Integer volleyShoot;
 
-    private int penaltyKick;
+    private Integer penaltyKick;
 
-    private int shortPass;
+    private Integer shortPass;
 
-    private int vision;
+    private Integer vision;
 
-    private int crossing;
+    private Integer crossing;
 
-    private int longPass;
+    private Integer longPass;
 
-    private int freeKick;
+    private Integer freeKick;
 
-    private int curve;
+    private Integer curve;
 
-    private int dribble;
+    private Integer dribble;
 
-    private int ballControl;
+    private Integer ballControl;
 
-    private int agility;
+    private Integer agility;
 
-    private int balance;
+    private Integer balance;
 
-    private int reactionSpeed;
+    private Integer reactionSpeed;
 
-    private int defending;
+    private Integer defending;
 
-    private int tackling;
+    private Integer tackling;
 
-    private int interception;
+    private Integer Integererception;
 
-    private int heading;
+    private Integer heading;
 
-    private int slideTackle;
+    private Integer slideTackle;
 
-    private int physicality;
+    private Integer physicality;
 
-    private int stamina;
+    private Integer stamina;
 
-    private int determination;
+    private Integer determination;
 
-    private int jumping;
+    private Integer jumping;
 
-    private int composure;
+    private Integer composure;
 
-    private int gkDiving;
+    private Integer gkDiving;
 
-    private int gkHandling;
+    private Integer gkHandling;
 
-    private int gkKicking;
+    private Integer gkKicking;
 
-    private int gkReflexes;
+    private Integer gkReflexes;
 
-    private int gkPositioning;
+    private Integer gkPositioning;
 
     @ManyToOne
     Season season;
@@ -92,4 +91,14 @@ public class Player {
     public void updateSeason(Season season) {
         this.season = season;
     }
+
+    /*@Override
+    public Long getId() {
+        return this.id;
+    }
+
+    @Override
+    public boolean isNew() {
+        return true;
+    }*/
 }
