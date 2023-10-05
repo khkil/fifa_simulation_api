@@ -1,7 +1,7 @@
 package com.simulation.fifa.api.association.entity;
 
-import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.player.entity.Player;
+import com.simulation.fifa.api.skill.entity.Skill;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,20 +11,16 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
 @Builder
-public class PlayerClubAssociation {
+@Getter
+public class PlayerSkillAssociation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private Integer startYear;
-
-    private Integer endYear;
 
     @ManyToOne
     private Player player;
 
     @ManyToOne
-    private Club club;
+    private Skill skill;
 }

@@ -39,6 +39,7 @@ public class BatchController {
         batchService.createClubs();
         batchService.createSeasons();
         batchService.createPositions();
+        batchService.createSkills();
         batchService.createPlayers();
         return ResponseEntity.ok("dd");
     }
