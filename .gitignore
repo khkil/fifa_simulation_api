@@ -87,3 +87,6 @@ local.properties
 target/
 
 /bin
+
+### Querydsl QClass ###
+src/main/generated/*
