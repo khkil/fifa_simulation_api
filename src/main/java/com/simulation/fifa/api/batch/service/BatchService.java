@@ -13,7 +13,7 @@ import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.club.repository.ClubRepository;
 import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.league.repository.LeagueRepository;
-import com.simulation.fifa.api.player.dto.PlayerDto;
+import com.simulation.fifa.api.player.dto.PlayerBatchDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.domain.Position;
@@ -23,7 +23,7 @@ import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
 import com.simulation.fifa.api.skill.repository.SkillRepository;
 import com.simulation.fifa.util.RegexUtil;
-import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -45,7 +45,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class BatchService {
+    private final JdbcTemplate jdbcTemplate;
+
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
     @Value("${nexon.fifa-online.static-api-url}")
@@ -178,14 +181,14 @@ public class BatchService {
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
 
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 100);
+        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 300);
 
         for (SpIdDto spidDto : spIdList) {
             Long spId = spidDto.getId();
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
 
-                PlayerDto.Detail playerInfo = new PlayerDto.Detail(spidDto.getId(), spidDto.getName());
+                PlayerBatchDto playerInfo = new PlayerBatchDto(spidDto.getId(), spidDto.getName());
 
                 // 선수 능력치 설정
                 Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
@@ -319,17 +322,20 @@ public class BatchService {
         }
     }
 
-    @Transactional
     public void bulkTest() {
+        long beforeTime = System.currentTimeMillis();
+
         List<Player> players = new ArrayList<>();
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 50);
+        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 500);
 
-        for (SpIdDto spidDto : spIdList) {
-            Long spId = spidDto.getId();
-            try {
+        try {
+            //To-do 데이터 셋팅 후 신규 시즌 선수 추가시 skip 하는 로직 구현
+            for (SpIdDto spidDto : spIdList) {
+                Long spId = spidDto.getId();
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
+                log.info("document {}", (System.currentTimeMillis() - beforeTime) / 1000);
 
-                PlayerDto.Detail playerInfo = new PlayerDto.Detail(spidDto.getId(), spidDto.getName());
+                PlayerBatchDto playerInfo = new PlayerBatchDto(spidDto.getId(), spidDto.getName());
 
                 // 선수 능력치 설정
                 Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
@@ -343,11 +349,33 @@ public class BatchService {
                 Player player = playerInfo.toEntity(playerInfo);
 
                 players.add(player);
-            } catch (IOException e) {
-                log.error("선수 생성 오류 {0}", e);
-            } finally {
-                playerRepository.saveAll(players);
             }
+        } catch (IOException e) {
+            log.error("선수 생성 오류 {0}", e);
+        } finally {
+            log.info("document all {}", (System.currentTimeMillis() - beforeTime) / 1000);
+            /*
+            String sql = "INSERT INTO player (id, name) VALUES (?, ?)";
+            jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    Long id = players.get(i).getId();
+                    String name = players.get(i).getName();
+                    ps.setLong(1, id);
+                    ps.setString(2, name);
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return players.size();
+                }
+            });
+            beforeTime = System.currentTimeMillis();
+            log.info("JDBC {}", (System.currentTimeMillis() - beforeTime) / 1000);*/
+
+
+            playerRepository.saveAll(players);
+            log.info("JPA {}", (System.currentTimeMillis() - beforeTime) / 1000);
         }
     }
 }

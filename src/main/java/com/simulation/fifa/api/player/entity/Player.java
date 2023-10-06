@@ -11,7 +11,7 @@ import org.springframework.data.domain.Persistable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-public class Player /*implements Persistable<Long>*/ {
+public class Player implements Persistable<Long> {
     @Id
     private Long id;
 
@@ -92,7 +92,11 @@ public class Player /*implements Persistable<Long>*/ {
         this.season = season;
     }
 
-    /*@Override
+    /*******************************
+     * bulk insert 성능 향상 위해 insert 전 select 안하도록 메소드 오버라이딩
+     ******************************/
+
+    @Override
     public Long getId() {
         return this.id;
     }
@@ -100,5 +104,5 @@ public class Player /*implements Persistable<Long>*/ {
     @Override
     public boolean isNew() {
         return true;
-    }*/
+    }
 }
