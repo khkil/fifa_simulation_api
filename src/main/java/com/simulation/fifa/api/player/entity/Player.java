@@ -1,6 +1,5 @@
 package com.simulation.fifa.api.player.entity;
 
-import com.simulation.fifa.api.position.domain.Position;
 import com.simulation.fifa.api.season.entity.Season;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,7 +58,7 @@ public class Player implements Persistable<Long> {
 
     private Integer tackling;
 
-    private Integer Integererception;
+    private Integer interception;
 
     private Integer heading;
 

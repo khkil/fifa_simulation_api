@@ -181,7 +181,7 @@ public class BatchService {
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
 
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 300);
+        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 100);
 
         for (SpIdDto spidDto : spIdList) {
             Long spId = spidDto.getId();

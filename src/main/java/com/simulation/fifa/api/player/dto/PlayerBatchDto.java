@@ -28,7 +28,7 @@ public class PlayerBatchDto {
     private Integer reactionSpeed;
     private Integer defending;
     private Integer tackling;
-    private Integer Integererception;
+    private Integer interception;
     private Integer heading;
     private Integer slideTackle;
     private Integer physicality;
@@ -73,7 +73,7 @@ public class PlayerBatchDto {
                 .reactionSpeed(playerBatchDto.reactionSpeed)
                 .defending(playerBatchDto.defending)
                 .tackling(playerBatchDto.tackling)
-                .Integererception(playerBatchDto.Integererception)
+                .interception(playerBatchDto.interception)
                 .heading(playerBatchDto.heading)
                 .slideTackle(playerBatchDto.slideTackle)
                 .physicality(playerBatchDto.physicality)
@@ -112,7 +112,7 @@ public class PlayerBatchDto {
             case "반응 속도" -> this.reactionSpeed = value;
             case "대인 수비" -> this.defending = value;
             case "태클" -> this.tackling = value;
-            case "가로채기" -> this.Integererception = value;
+            case "가로채기" -> this.interception = value;
             case "헤더" -> this.heading = value;
             case "슬라이딩 태클" -> this.slideTackle = value;
             case "몸싸움" -> this.physicality = value;
