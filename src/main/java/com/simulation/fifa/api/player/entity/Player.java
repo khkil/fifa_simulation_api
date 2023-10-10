@@ -1,9 +1,12 @@
 package com.simulation.fifa.api.player.entity;
 
+import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
 import com.simulation.fifa.api.season.entity.Season;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.domain.Persistable;
+
+import java.util.Set;
 
 @Entity
 @Builder
@@ -86,6 +89,9 @@ public class Player implements Persistable<Long> {
 
     @ManyToOne
     Season season;
+
+    @OneToMany(mappedBy = "player")
+    Set<PlayerPositionAssociation> playerPositionAssociations;
 
     public void updateSeason(Season season) {
         this.season = season;
