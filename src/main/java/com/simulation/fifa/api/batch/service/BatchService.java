@@ -16,7 +16,7 @@ import com.simulation.fifa.api.league.repository.LeagueRepository;
 import com.simulation.fifa.api.player.dto.PlayerBatchDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
-import com.simulation.fifa.api.position.domain.Position;
+import com.simulation.fifa.api.position.entity.Position;
 import com.simulation.fifa.api.position.repository.PositionRepository;
 import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.season.repository.SeasonRepository;
@@ -196,7 +196,7 @@ public class BatchService {
                     String name = stat.getElementsByClass("txt").get(0).html();
                     String value = RegexUtil.extractNumbers(stat.getElementsByClass("value").get(0).html());
 
-                    playerInfo.setValueFromText(name, Integer.parseInt(value));
+                    playerInfo.setValueFromText(name, Integer.parseInt(value) + 3);
                 }
 
                 Player player = playerInfo.toEntity(playerInfo);
@@ -214,6 +214,7 @@ public class BatchService {
                                 .builder()
                                 .player(player)
                                 .position(positionMap.get(el.getElementsByClass("txt").get(0).html()))
+                                .stat(Integer.parseInt(el.getElementsByClass("value").get(0).html()) + 3)
                                 .build()
                         )
                         .toList();

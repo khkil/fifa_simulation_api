@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.position.domain;
+package com.simulation.fifa.api.position.entity;
 
 import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
 import jakarta.persistence.Entity;

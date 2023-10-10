@@ -1,6 +1,6 @@
 package com.simulation.fifa.api.batch.dto;
 
-import com.simulation.fifa.api.position.domain.Position;
+import com.simulation.fifa.api.position.entity.Position;
 import lombok.Data;
 
 @Data
