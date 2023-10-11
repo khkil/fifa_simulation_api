@@ -5,12 +5,12 @@ import lombok.Data;
 
 @Data
 public class PositionDto {
-    private String name;
+    private String positionName;
     private Integer stat;
 
     @QueryProjection
-    public PositionDto(String name, Integer stat) {
-        this.name = name;
+    public PositionDto(String positionName, Integer stat) {
+        this.positionName = positionName;
         this.stat = stat;
     }
 }

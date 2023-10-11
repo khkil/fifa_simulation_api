@@ -6,13 +6,13 @@ import lombok.Data;
 @Data
 public class SeasonDto {
     private Long id;
-    private String name;
+    private String seasonName;
     private String imageUrl;
 
     @QueryProjection
-    public SeasonDto(Long id, String name, String imageUrl) {
+    public SeasonDto(Long id, String seasonName, String imageUrl) {
         this.id = id;
-        this.name = name;
+        this.seasonName = seasonName;
         this.imageUrl = imageUrl;
     }
 }

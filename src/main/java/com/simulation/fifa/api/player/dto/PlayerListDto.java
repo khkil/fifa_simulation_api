@@ -1,25 +1,30 @@
 package com.simulation.fifa.api.player.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
+import com.simulation.fifa.api.player.entity.PreferredFootEnum;
 import com.simulation.fifa.api.position.dto.PositionDto;
-import com.simulation.fifa.api.position.entity.Position;
 import com.simulation.fifa.api.season.dto.SeasonDto;
 import lombok.Data;
 
-import java.util.List;
 import java.util.Set;
 
 @Data
 public class PlayerListDto {
     private Long spId;
-    private String name;
+    private String playerName;
+    private PreferredFootEnum preferredFoot;
+    private Integer leftFoot;
+    private Integer rightFoot;
     private SeasonDto season;
     private Set<PositionDto> positions;
 
     @QueryProjection
-    public PlayerListDto(Long spId, String name, SeasonDto season, Set<PositionDto> positions) {
+    public PlayerListDto(Long spId, String playerName, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, SeasonDto season, Set<PositionDto> positions) {
         this.spId = spId;
-        this.name = name;
+        this.playerName = playerName;
+        this.preferredFoot = preferredFoot;
+        this.leftFoot = leftFoot;
+        this.rightFoot = rightFoot;
         this.season = season;
         this.positions = positions;
     }

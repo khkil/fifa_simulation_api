@@ -15,6 +15,7 @@ import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.league.repository.LeagueRepository;
 import com.simulation.fifa.api.player.dto.PlayerBatchDto;
 import com.simulation.fifa.api.player.entity.Player;
+import com.simulation.fifa.api.player.entity.PreferredFootEnum;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
 import com.simulation.fifa.api.position.repository.PositionRepository;
@@ -189,6 +190,23 @@ public class BatchService {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
 
                 PlayerBatchDto playerInfo = new PlayerBatchDto(spidDto.getId(), spidDto.getName());
+
+                // 선수 주발, 약발 설정
+                String[] foots = document.getElementsByClass("etc foot").get(0).html().split("–");
+                for (String foot : foots) {
+                    if (foot.contains("L")) {
+                        playerInfo.setLeftFoot(Integer.parseInt(RegexUtil.extractNumbers(foot)));
+                        if (foot.contains("strong")) {
+                            playerInfo.setPreferredFoot(PreferredFootEnum.LEFT);
+                        }
+                        playerInfo.setPreferredFoot(foot.contains("strong") ? PreferredFootEnum.LEFT : PreferredFootEnum.RIGHT);
+                    } else {
+                        playerInfo.setRightFoot(Integer.parseInt(RegexUtil.extractNumbers(foot)));
+                        if (foot.contains("strong")) {
+                            playerInfo.setPreferredFoot(PreferredFootEnum.RIGHT);
+                        }
+                    }
+                }
 
                 // 선수 능력치 설정
                 Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");

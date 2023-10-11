@@ -1,12 +1,14 @@
 package com.simulation.fifa.api.player.dto;
 
 import com.simulation.fifa.api.player.entity.Player;
+import com.simulation.fifa.api.player.entity.PreferredFootEnum;
 import lombok.Data;
 
 @Data
 public class PlayerBatchDto {
     private Long spId;
     private String name;
+    // 능력치
     private Integer speed;
     private Integer acceleration;
     private Integer finishing;
@@ -41,6 +43,10 @@ public class PlayerBatchDto {
     private Integer gkKicking;
     private Integer gkReflexes;
     private Integer gkPositioning;
+    // 주발 약발
+    private PreferredFootEnum preferredFoot;
+    private Integer rightFoot;
+    private Integer leftFoot;
 
     public PlayerBatchDto(Long spId, String name) {
         this.spId = spId;
@@ -86,6 +92,9 @@ public class PlayerBatchDto {
                 .gkKicking(playerBatchDto.gkKicking)
                 .gkReflexes(playerBatchDto.gkReflexes)
                 .gkPositioning(playerBatchDto.gkPositioning)
+                .preferredFoot(preferredFoot)
+                .rightFoot(rightFoot)
+                .leftFoot(leftFoot)
                 .build();
     }
 

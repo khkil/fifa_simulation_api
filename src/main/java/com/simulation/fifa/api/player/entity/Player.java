@@ -89,6 +89,13 @@ public class Player implements Persistable<Long> {
 
     private Integer gkPositioning;
 
+    @Enumerated(EnumType.STRING)
+    private PreferredFootEnum preferredFoot;
+
+    private Integer leftFoot;
+
+    private Integer rightFoot;
+
     @ManyToOne
     Season season;
 
