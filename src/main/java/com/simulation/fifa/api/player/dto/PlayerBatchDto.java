@@ -103,40 +103,49 @@ public class PlayerBatchDto {
 
     public void setValueFromText(String text, Integer value) {
         switch (text) {
+            // 스피드
             case "속력" -> this.speed = value;
             case "가속력" -> this.acceleration = value;
+            // 슛팅
             case "골 결정력" -> this.finishing = value;
             case "슛 파워" -> this.shootPower = value;
             case "중거리 슛" -> this.longShoot = value;
             case "위치 선정" -> this.positioning = value;
             case "발리슛" -> this.volleyShoot = value;
             case "페널티 킥" -> this.penaltyKick = value;
+            // 패스
             case "짧은 패스" -> this.shortPass = value;
             case "시야" -> this.vision = value;
             case "크로스" -> this.crossing = value;
             case "긴 패스" -> this.longPass = value;
             case "프리킥" -> this.freeKick = value;
             case "커브" -> this.curve = value;
+            // 드리블
             case "드리블" -> this.dribble = value;
             case "볼 컨트롤" -> this.ballControl = value;
             case "민첩성" -> this.agility = value;
             case "밸런스" -> this.balance = value;
             case "반응 속도" -> this.reactionSpeed = value;
+            // 수비
             case "대인 수비" -> this.defending = value;
             case "태클" -> this.tackling = value;
             case "가로채기" -> this.interception = value;
             case "헤더" -> this.heading = value;
             case "슬라이딩 태클" -> this.slideTackle = value;
+            // 피지컬
             case "몸싸움" -> this.physicality = value;
             case "스태미너" -> this.stamina = value;
             case "적극성" -> this.determination = value;
             case "점프" -> this.jumping = value;
+            //
             case "침착성" -> this.composure = value;
+            // 골키퍼
             case "GK 다이빙" -> this.gkDiving = value;
             case "GK 핸들링" -> this.gkHandling = value;
             case "GK 킥" -> this.gkKicking = value;
             case "GK 반응속도" -> this.gkReflexes = value;
             case "GK 위치 선정" -> this.gkPositioning = value;
+            //
         }
     }
 }
