@@ -242,7 +242,7 @@ public class BatchService {
                                 .builder()
                                 .player(player)
                                 .position(positionMap.get(el.getElementsByClass("txt").get(0).html()))
-                                .stat(Integer.parseInt(el.getElementsByClass("value").get(0).html()) + 3)
+                                .overall(Integer.parseInt(el.getElementsByClass("value").get(0).html()) + 3)
                                 .build()
                         )
                         .toList();
@@ -292,58 +292,67 @@ public class BatchService {
     }
 
     public void updatePriceHistory() {
+        final int maxUpgradeValue = 10; // 선수 +10 단계 까지 저장
+        final int keepDays = 30; //30일 동안의 가격 데이터 만 저장
+
         List<Player> players = playerRepository.findAll();
         Set<PlayerPrice> playerPriceList = new HashSet<>();
         for (Player player : players) {
             try {
-                Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph").data("spid", String.valueOf(player.getId())).post();
-                long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
-                // 현재 가격 설정
-                PlayerPrice nowPlayerPrice = PlayerPrice
-                        .builder()
-                        .player(player)
-                        .price(nowPrice)
-                        .date(LocalDate.now())
-                        .createAt(LocalDateTime.now())
-                        .build();
-                playerPriceList.add(nowPlayerPrice);
+                for (int i = 1; i <= maxUpgradeValue; i++) {
+                    Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
+                            .data("spid", String.valueOf(player.getId()))
+                            .data("n1Strong", String.valueOf(i))
+                            .post();
+                    long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
+                    // 현재 가격 설정
+                    PlayerPrice nowPlayerPrice = PlayerPrice
+                            .builder()
+                            .player(player)
+                            .price(nowPrice)
+                            .upgradeValue(i)
+                            .date(LocalDate.now())
+                            .createAt(LocalDateTime.now())
+                            .build();
+                    playerPriceList.add(nowPlayerPrice);
 
-                // 이전 날짜 가격 설정
-                String scriptText = document.select("script").get(1).html();
-                int startIdx = scriptText.indexOf("var json1 = ");
-                int endIdx = scriptText.indexOf("var option = {", startIdx);
+                    // 이전 날짜 가격 설정
+                    String scriptText = document.select("script").get(1).html();
+                    int startIdx = scriptText.indexOf("var json1 = ");
+                    int endIdx = scriptText.indexOf("var option = {", startIdx);
 
-                if (startIdx != -1 && endIdx != -1) {
-                    String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
-                    JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
-                    JsonArray timeList = priceJson.getAsJsonArray("time");
-                    JsonArray priceList = priceJson.getAsJsonArray("value");
+                    if (startIdx != -1 && endIdx != -1) {
+                        String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
+                        JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
+                        JsonArray timeList = priceJson.getAsJsonArray("time");
+                        JsonArray priceList = priceJson.getAsJsonArray("value");
 
-                    for (int i = 0; i < timeList.size(); i++) {
-                        String timeStr = String.valueOf(timeList.get(i)).replace("\"", "");
-                        String priceStr = String.valueOf(priceList.get(i)).replace("\"", "");
+                        for (int y = 0; y < timeList.size(); y++) {
+                            String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
+                            String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
 
-                        if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
-                        int month = Integer.parseInt(timeStr.split("\\.")[0]);
-                        int day = Integer.parseInt(timeStr.split("\\.")[1]);
+                            if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
+                            int month = Integer.parseInt(timeStr.split("\\.")[0]);
+                            int day = Integer.parseInt(timeStr.split("\\.")[1]);
 
-                        LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
-                        long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
+                            LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
+                            long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
 
-                        //30일 동안의 가격 데이터 만 저장
-                        int standard = 30;
-                        if (date.isAfter(LocalDate.now().minusDays(standard))) {
-                            PlayerPrice playerPrice = PlayerPrice
-                                    .builder()
-                                    .player(player)
-                                    .price(price)
-                                    .date(date)
-                                    .createAt(LocalDateTime.now())
-                                    .build();
-                            playerPriceList.add(playerPrice);
+                            if (date.isAfter(LocalDate.now().minusDays(keepDays))) {
+                                PlayerPrice playerPrice = PlayerPrice
+                                        .builder()
+                                        .player(player)
+                                        .price(price)
+                                        .upgradeValue(i)
+                                        .date(date)
+                                        .createAt(LocalDateTime.now())
+                                        .build();
+                                playerPriceList.add(playerPrice);
+                            }
                         }
                     }
                 }
+
             } catch (IOException e) {
                 log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
             }

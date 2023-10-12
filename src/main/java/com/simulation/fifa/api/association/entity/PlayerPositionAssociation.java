@@ -15,7 +15,7 @@ public class PlayerPositionAssociation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer stat;
+    private Integer overall;
 
     @ManyToOne
     private Player player;

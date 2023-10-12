@@ -23,6 +23,8 @@ public class PlayerPrice {
 
     private Long price;
 
+    private Integer upgradeValue;
+
     private LocalDate date;
 
     @CreatedDate

@@ -7,19 +7,21 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.simulation.fifa.api.club.dto.QClubDto;
 import com.simulation.fifa.api.player.dto.*;
 import com.simulation.fifa.api.position.dto.QPositionDto;
+import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
 import com.simulation.fifa.api.season.dto.QSeasonDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 import static com.querydsl.core.group.GroupBy.max;
-import static com.querydsl.core.group.GroupBy.avg;
+import static com.querydsl.core.group.GroupBy.list;
 import static com.simulation.fifa.api.association.entity.QPlayerPositionAssociation.playerPositionAssociation;
 import static com.simulation.fifa.api.association.entity.QPlayerClubAssociation.playerClubAssociation;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
@@ -47,13 +49,23 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .from(player)
                 .fetchOne();
 
+        LocalDate maxDate = jpaQueryFactory
+                .select(playerPrice.date.max())
+                .from(playerPrice)
+                .fetchOne();
+
         List<PlayerListDto> players = jpaQueryFactory
                 .selectFrom(player)
                 .join(player.playerPositionAssociations, playerPositionAssociation)
                 .join(playerPositionAssociation.position, position)
                 .join(player.season, season)
                 .join(player.priceList, playerPrice)
-                .where(player.id.in(playerIds), playerPrice.date.eq(max(playerPrice.date)))
+                .where(player.id.in(playerIds), playerPrice.date.eq(maxDate))
+                .orderBy(
+                        playerPositionAssociation.overall.desc(),
+                        player.id.desc(),
+                        playerPrice.upgradeValue.asc()
+                )
                 .transform(groupBy(player.id)
                         .list(new QPlayerListDto(
                                 player.id,
@@ -62,7 +74,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 player.preferredFoot,
                                 player.leftFoot,
                                 player.rightFoot,
-                                playerPrice.price,
+                                set(new QPlayerPriceListDto(
+                                        playerPrice.price,
+                                        playerPrice.upgradeValue
+                                )),
                                 new QPlayerListDto_Average(
                                         speedAvg(),
                                         shootAvg(),
@@ -78,7 +93,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 ),
                                 set(new QPositionDto(
                                         position.positionName,
-                                        playerPositionAssociation.stat
+                                        playerPositionAssociation.overall
                                 ))
                         ))
                 );
@@ -108,7 +123,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 ),
                                 set(new QPositionDto(
                                         position.positionName,
-                                        playerPositionAssociation.stat
+                                        playerPositionAssociation.overall
                                 )),
                                 set(new QClubDto(
                                         club.id,

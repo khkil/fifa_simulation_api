@@ -6,11 +6,11 @@ import lombok.Data;
 @Data
 public class PositionDto {
     private String positionName;
-    private Integer stat;
+    private Integer overall;
 
     @QueryProjection
-    public PositionDto(String positionName, Integer stat) {
+    public PositionDto(String positionName, Integer overall) {
         this.positionName = positionName;
-        this.stat = stat;
+        this.overall = overall;
     }
 }
