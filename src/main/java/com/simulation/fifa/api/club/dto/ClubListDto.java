@@ -4,12 +4,12 @@ import com.querydsl.core.annotations.QueryProjection;
 import lombok.Data;
 
 @Data
-public class ClubDto {
+public class ClubListDto {
     private Long id;
     private String clubName;
 
     @QueryProjection
-    public ClubDto(Long id, String clubName) {
+    public ClubListDto(Long id, String clubName) {
         this.id = id;
         this.clubName = clubName;
     }

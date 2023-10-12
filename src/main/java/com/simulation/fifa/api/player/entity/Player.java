@@ -2,6 +2,7 @@ package com.simulation.fifa.api.player.entity;
 
 import com.simulation.fifa.api.association.entity.PlayerClubAssociation;
 import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
+import com.simulation.fifa.api.association.entity.PlayerSkillAssociation;
 import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.price.entity.PlayerPrice;
 import com.simulation.fifa.api.season.entity.Season;
@@ -107,6 +108,10 @@ public class Player implements Persistable<Long> {
 
     @OneToMany(mappedBy = "player")
     Set<PlayerClubAssociation> playerClubAssociations;
+
+    @OneToMany(mappedBy = "player")
+    Set<PlayerSkillAssociation> playerSkillAssociations;
+
 
     @OneToMany(mappedBy = "player")
     Set<PlayerPrice> priceList;

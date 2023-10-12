@@ -4,7 +4,7 @@ import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.simulation.fifa.api.club.dto.QClubDto;
+import com.simulation.fifa.api.club.dto.QClubListDto;
 import com.simulation.fifa.api.player.dto.*;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
@@ -15,8 +15,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
@@ -37,12 +39,13 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
     @Override
     public Page<PlayerListDto> findAllCustom(Pageable pageable) {
-        List<Long> playerIds = jpaQueryFactory
-                .select(player.id)
-                .from(player)
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
+        Set<Long> playerIds = new HashSet<>(
+                jpaQueryFactory.select(player.id)
+                        .from(player)
+                        .offset(pageable.getOffset())
+                        .limit(pageable.getPageSize())
+                        .fetch()
+        );
 
         Long count = jpaQueryFactory
                 .select(player.count())
@@ -125,7 +128,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                         position.positionName,
                                         playerPositionAssociation.overall
                                 )),
-                                set(new QClubDto(
+                                set(new QClubListDto(
                                         club.id,
                                         club.clubName
                                 ))
