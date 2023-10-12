@@ -1,10 +1,12 @@
 package com.simulation.fifa.api.batch.controller;
 
 import com.simulation.fifa.api.batch.service.BatchService;
+import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,5 +51,11 @@ public class BatchController {
     public ResponseEntity bulk() {
         batchService.bulkTest();
         return ResponseEntity.ok("bulk");
+    }
+
+    @PutMapping("/price")
+    public ResponseEntity<ApiResponse<?>> updatePrice() {
+        batchService.updatePriceHistory();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithNoContent());
     }
 }

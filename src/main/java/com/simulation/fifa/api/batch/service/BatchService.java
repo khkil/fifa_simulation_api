@@ -1,5 +1,8 @@
 package com.simulation.fifa.api.batch.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.simulation.fifa.api.association.entity.PlayerClubAssociation;
 import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
 import com.simulation.fifa.api.association.entity.PlayerSkillAssociation;
@@ -19,6 +22,8 @@ import com.simulation.fifa.api.player.entity.PreferredFootEnum;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
 import com.simulation.fifa.api.position.repository.PositionRepository;
+import com.simulation.fifa.api.price.entity.PlayerPrice;
+import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
 import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
@@ -39,9 +44,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -75,6 +80,8 @@ public class BatchService {
     PlayerClubAssociationRepository playerClubAssociationRepository;
     @Autowired
     PlayerSkillAssociationRepository playerSkillAssociationRepository;
+    @Autowired
+    PlayerPriceRepository playerPriceRepository;
 
     public void createLeagues() {
         List<League> leagues = new ArrayList<>();
@@ -208,6 +215,9 @@ public class BatchService {
                     }
                 }
 
+                // 급여
+                playerInfo.setPay(Integer.parseInt(RegexUtil.extractNumbers(document.getElementsByClass("pay_side").get(0).html())));
+
                 // 선수 능력치 설정
                 Elements stats = document.getElementsByClass("content_bottom").get(0).getElementsByClass("ab");
                 for (Element stat : stats) {
@@ -278,6 +288,73 @@ public class BatchService {
                 playerClubAssociationRepository.saveAll(playerClubAssociations);
                 playerSkillAssociationRepository.saveAll(playerSkillAssociations);
             }
+        }
+    }
+
+    public void updatePriceHistory() {
+        List<Player> players = playerRepository.findAll();
+        Set<PlayerPrice> playerPriceList = new HashSet<>();
+        for (Player player : players) {
+            try {
+                Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph").data("spid", String.valueOf(player.getId())).post();
+                long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
+                // 현재 가격 설정
+                PlayerPrice nowPlayerPrice = PlayerPrice
+                        .builder()
+                        .player(player)
+                        .price(nowPrice)
+                        .date(LocalDate.now())
+                        .createAt(LocalDateTime.now())
+                        .build();
+                playerPriceList.add(nowPlayerPrice);
+
+                // 이전 날짜 가격 설정
+                String scriptText = document.select("script").get(1).html();
+                int startIdx = scriptText.indexOf("var json1 = ");
+                int endIdx = scriptText.indexOf("var option = {", startIdx);
+
+                if (startIdx != -1 && endIdx != -1) {
+                    String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
+                    JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
+                    JsonArray timeList = priceJson.getAsJsonArray("time");
+                    JsonArray priceList = priceJson.getAsJsonArray("value");
+
+                    for (int i = 0; i < timeList.size(); i++) {
+                        String timeStr = String.valueOf(timeList.get(i)).replace("\"", "");
+                        String priceStr = String.valueOf(priceList.get(i)).replace("\"", "");
+
+                        if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
+                        int month = Integer.parseInt(timeStr.split("\\.")[0]);
+                        int day = Integer.parseInt(timeStr.split("\\.")[1]);
+
+                        LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
+                        long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
+
+                        //30일 동안의 가격 데이터 만 저장
+                        int standard = 30;
+                        if (date.isAfter(LocalDate.now().minusDays(standard))) {
+                            PlayerPrice playerPrice = PlayerPrice
+                                    .builder()
+                                    .player(player)
+                                    .price(price)
+                                    .date(date)
+                                    .createAt(LocalDateTime.now())
+                                    .build();
+                            playerPriceList.add(playerPrice);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
+            }
+
+        }
+        // 갱신된 가격 목록있으면 초기화
+        if (!playerPriceList.isEmpty()) {
+            playerPriceRepository.deleteAll();
+            playerPriceRepository.saveAll(playerPriceList);
+        } else {
+            log.error("갱신된 목록이 존재하지 않습니다.");
         }
     }
 

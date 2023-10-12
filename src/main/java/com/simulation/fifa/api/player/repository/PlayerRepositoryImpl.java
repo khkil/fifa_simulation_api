@@ -53,6 +53,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         .list(new QPlayerListDto(
                                 player.id,
                                 player.name,
+                                player.pay,
                                 player.preferredFoot,
                                 player.leftFoot,
                                 player.rightFoot,

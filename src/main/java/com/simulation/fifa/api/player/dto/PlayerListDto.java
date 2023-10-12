@@ -12,6 +12,7 @@ import java.util.Set;
 public class PlayerListDto {
     private Long spId;
     private String playerName;
+    private Integer pay;
     private PreferredFootEnum preferredFoot;
     private Integer leftFoot;
     private Integer rightFoot;
@@ -19,9 +20,10 @@ public class PlayerListDto {
     private Set<PositionDto> positions;
 
     @QueryProjection
-    public PlayerListDto(Long spId, String playerName, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, SeasonDto season, Set<PositionDto> positions) {
+    public PlayerListDto(Long spId, String playerName, Integer pay, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, SeasonDto season, Set<PositionDto> positions) {
         this.spId = spId;
         this.playerName = playerName;
+        this.pay = pay;
         this.preferredFoot = preferredFoot;
         this.leftFoot = leftFoot;
         this.rightFoot = rightFoot;

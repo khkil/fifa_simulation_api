@@ -47,6 +47,8 @@ public class PlayerBatchDto {
     private PreferredFootEnum preferredFoot;
     private Integer rightFoot;
     private Integer leftFoot;
+    // 급여
+    private Integer pay;
 
     public PlayerBatchDto(Long spId, String name) {
         this.spId = spId;
@@ -95,6 +97,7 @@ public class PlayerBatchDto {
                 .preferredFoot(preferredFoot)
                 .rightFoot(rightFoot)
                 .leftFoot(leftFoot)
+                .pay(pay)
                 .build();
     }
 
