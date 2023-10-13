@@ -3,6 +3,7 @@ package com.simulation.fifa.api.player.controller;
 import com.simulation.fifa.api.common.ApiResponse;
 import com.simulation.fifa.api.player.PlayerService;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
+import com.simulation.fifa.api.player.dto.PlayerSearchDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,8 +22,8 @@ public class PlayerController {
     PlayerService playerService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> findAll(Pageable pageable) {
-        Page<PlayerListDto> players = playerService.findAll(pageable);
+    public ResponseEntity<ApiResponse<?>> findAll(Pageable pageable, PlayerSearchDto playerSearchDto) {
+        Page<PlayerListDto> players = playerService.findAll(pageable, playerSearchDto);
         return ResponseEntity.ok(ApiResponse.createSuccess(players));
     }
 

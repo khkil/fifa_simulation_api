@@ -1,6 +1,8 @@
 package com.simulation.fifa.api.player.repository;
 
 import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -8,42 +10,52 @@ import com.simulation.fifa.api.club.dto.QClubListDto;
 import com.simulation.fifa.api.player.dto.*;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
-import com.simulation.fifa.api.season.dto.QSeasonDto;
+
+import com.simulation.fifa.api.season.dto.QSeasonListDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 import static com.querydsl.core.group.GroupBy.max;
 import static com.querydsl.core.group.GroupBy.list;
-import static com.simulation.fifa.api.association.entity.QPlayerPositionAssociation.playerPositionAssociation;
 import static com.simulation.fifa.api.association.entity.QPlayerClubAssociation.playerClubAssociation;
+import static com.simulation.fifa.api.association.entity.QPlayerPositionAssociation.playerPositionAssociation;
+import static com.simulation.fifa.api.association.entity.QPlayerSkillAssociation.playerSkillAssociation;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.position.entity.QPosition.position;
 import static com.simulation.fifa.api.season.entity.QSeason.season;
 import static com.simulation.fifa.api.club.entity.QClub.club;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
-import static com.querydsl.core.types.dsl.Expressions.asNumber;
+import static com.simulation.fifa.api.skill.entity.QSkill.skill;
 
 @RequiredArgsConstructor
 public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Page<PlayerListDto> findAllCustom(Pageable pageable) {
+    public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
+        Predicate[] whereConditions = new Predicate[]{
+                clubIdsIn(playerSearchDto.getClubIds()),
+                skillIdsIn(playerSearchDto.getSkillIds())
+        };
         Set<Long> playerIds = new HashSet<>(
                 jpaQueryFactory.select(player.id)
                         .from(player)
+                        .join(player.playerSkillAssociations, playerSkillAssociation)
+                        .join(playerSkillAssociation.skill, skill)
+                        .join(player.playerClubAssociations, playerClubAssociation)
+                        .join(playerClubAssociation.club, club)
+                        .join(player.season, season)
                         .offset(pageable.getOffset())
                         .limit(pageable.getPageSize())
+                        .groupBy(player.id)
+                        .where(whereConditions)
                         .fetch()
         );
 
@@ -89,7 +101,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                         defendAvg(),
                                         physicalAvg()
                                 ),
-                                new QSeasonDto(
+                                new QSeasonListDto(
                                         season.id,
                                         season.name,
                                         season.imageUrl
@@ -119,7 +131,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         .list(new QPlayerDetailDto(
                                 player.id,
                                 player.name,
-                                new QSeasonDto(
+                                new QSeasonListDto(
                                         season.id,
                                         season.name,
                                         season.imageUrl
@@ -186,13 +198,13 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         ).divide(4);
     }
 
- /*
-    스피드 o
-    슛 o
-    패스 o
-    드리블
-    수비
-    피지컬*/
+    private BooleanExpression clubIdsIn(Long[] clubIds) {
+        return clubIds != null && clubIds.length > 0 ? club.id.in(clubIds) : null;
+    }
+
+    private BooleanExpression skillIdsIn(Long[] skillIds) {
+        return skillIds != null && skillIds.length > 0 ? skill.id.in(skillIds) : null;
+    }
 }
 
 
