@@ -6,6 +6,9 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
+import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto;
+import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto_Date;
 import com.simulation.fifa.api.club.dto.QClubListDto;
 import com.simulation.fifa.api.player.dto.*;
 import com.simulation.fifa.api.position.dto.QPositionDto;
@@ -147,6 +150,26 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         ))
                 ).stream().findAny();
     }
+
+    @Override
+    public List<CheckPlayerPriceDto> findCheckPrice() {
+        return jpaQueryFactory
+                .selectFrom(player)
+                .join(player.priceList, playerPrice)
+                .groupBy(playerPrice.date,
+                        player.id
+                )
+                .transform(groupBy(player.id).list(
+                        new QCheckPlayerPriceDto(
+                                player.id,
+                                list(new QCheckPlayerPriceDto_Date(
+                                        playerPrice.date,
+                                        playerPrice.date.count()
+                                ))
+                        )
+                ));
+    }
+
 
     private NumberExpression<Integer> speedAvg() {
         return (player.speed.add(player.acceleration)).divide(2);

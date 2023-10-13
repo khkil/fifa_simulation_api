@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.batch.controller;
 
+import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/batch")
@@ -35,6 +38,12 @@ public class BatchController {
     public ResponseEntity<ApiResponse<?>> createDailyPrice() {
         batchService.createDailyPrice();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("오늘자 시세 생성 성공"));
+    }
+
+    @PostMapping("/check-price")
+    public ResponseEntity<ApiResponse<?>> checkPrice() {
+        List<CheckPlayerPriceDto> checkList = batchService.checkPrice();
+        return ResponseEntity.ok(ApiResponse.createSuccess(checkList));
     }
 
     @PostMapping("/all")

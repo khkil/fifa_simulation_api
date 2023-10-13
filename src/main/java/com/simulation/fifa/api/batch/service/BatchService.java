@@ -9,6 +9,7 @@ import com.simulation.fifa.api.association.entity.PlayerSkillAssociation;
 import com.simulation.fifa.api.association.repository.PlayerClubAssociationRepository;
 import com.simulation.fifa.api.association.repository.PlayerPositionAssociationRepository;
 import com.simulation.fifa.api.association.repository.PlayerSkillAssociationRepository;
+import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.SeasonIdDto;
 import com.simulation.fifa.api.batch.dto.SpIdDto;
 import com.simulation.fifa.api.batch.dto.SpPositionDto;
@@ -54,10 +55,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class BatchService {
-    private final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
-    private final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-
-    private final int ONCE_CREATE_PLAYER_COUNT = 20; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
+    public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
+    public final int ONCE_CREATE_PLAYER_COUNT = 20; // 선수 배치 저장시 한번에 저장될 갯수
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -209,8 +209,9 @@ public class BatchService {
     public void createDailyPrice() {
         List<Player> players = playerRepository.findAll();
         Set<PlayerPrice> playerPriceList = new HashSet<>();
-        for (Player player : players) {
-            try {
+
+        try {
+            for (Player player : players) {
                 for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
                             .data("spid", String.valueOf(player.getId()))
@@ -228,18 +229,11 @@ public class BatchService {
                             .build();
                     playerPriceList.add(nowPlayerPrice);
                 }
-
-            } catch (IOException e) {
-                log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
             }
-
-        }
-        // 갱신된 가격 목록있으면 초기화
-        if (!playerPriceList.isEmpty()) {
-            playerPriceRepository.deleteAll();
+        } catch (IOException e) {
+            log.error("데일리 시세 생성 오류 {0}", e);
+        } finally {
             playerPriceRepository.saveAll(playerPriceList);
-        } else {
-            log.error("갱신된 목록이 존재하지 않습니다.");
         }
     }
 
@@ -371,6 +365,10 @@ public class BatchService {
                 playerSkillAssociationRepository.saveAll(playerSkillAssociations);
             }
         }
+    }
+
+    public List<CheckPlayerPriceDto> checkPrice() {
+        return playerRepository.findCheckPrice();
     }
 
     private Set<PlayerPrice> makePriceHistories(Player player) {
