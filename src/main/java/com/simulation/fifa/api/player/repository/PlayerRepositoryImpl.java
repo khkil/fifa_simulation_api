@@ -44,11 +44,14 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     @Override
     public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
         Predicate[] whereConditions = new Predicate[]{
+                seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
-                skillIdsIn(playerSearchDto.getSkillIds())
+                skillIdsIn(playerSearchDto.getSkillIds()),
+                nameContains(playerSearchDto.getName())
         };
         Set<Long> playerIds = new HashSet<>(
-                jpaQueryFactory.select(player.id)
+                jpaQueryFactory
+                        .select(player.id)
                         .from(player)
                         .join(player.playerSkillAssociations, playerSkillAssociation)
                         .join(playerSkillAssociation.skill, skill)
@@ -62,10 +65,18 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         .fetch()
         );
 
-        Long count = jpaQueryFactory
+        int count = jpaQueryFactory
                 .select(player.count())
                 .from(player)
-                .fetchOne();
+                .join(player.playerSkillAssociations, playerSkillAssociation)
+                .join(playerSkillAssociation.skill, skill)
+                .join(player.playerClubAssociations, playerClubAssociation)
+                .join(playerClubAssociation.club, club)
+                .join(player.season, season)
+                .groupBy(player.id)
+                .where(whereConditions)
+                .fetch()
+                .size();
 
         LocalDate maxDate = jpaQueryFactory
                 .select(playerPrice.date.max())
@@ -221,12 +232,20 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         ).divide(4);
     }
 
+    private BooleanExpression seasonIdsIn(Long[] seasonIds) {
+        return seasonIds != null && seasonIds.length > 0 ? season.id.in(seasonIds) : null;
+    }
+
     private BooleanExpression clubIdsIn(Long[] clubIds) {
         return clubIds != null && clubIds.length > 0 ? club.id.in(clubIds) : null;
     }
 
     private BooleanExpression skillIdsIn(Long[] skillIds) {
         return skillIds != null && skillIds.length > 0 ? skill.id.in(skillIds) : null;
+    }
+
+    private BooleanExpression nameContains(String name) {
+        return name != null && !name.isEmpty() ? player.name.contains(name) : null;
     }
 }
 

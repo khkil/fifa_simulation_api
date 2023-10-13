@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 20; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 50; // 선수 배치 저장시 한번에 저장될 갯수
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -238,6 +238,8 @@ public class BatchService {
     }
 
     public void createPlayers() {
+        long startTime = System.currentTimeMillis();
+
         List<Player> players = new ArrayList<>();
         List<PlayerPrice> playerPriceList = new ArrayList<>();
         List<PlayerPositionAssociation> playerPositionAssociations = new ArrayList<>();
@@ -254,8 +256,6 @@ public class BatchService {
         Set<SpIdDto> allSpIdList = getPlayerSpIdList();
 
         List<SpIdDto> spIdList = allSpIdList.stream().filter(v -> !allPlayers.contains(v.getId())).toList();
-
-        log.info("남은 선수 : {} 명", spIdList.size());
 
         for (SpIdDto spidDto : spIdList.subList(0, ONCE_CREATE_PLAYER_COUNT)) {
             Long spId = spidDto.getId();
@@ -363,8 +363,12 @@ public class BatchService {
                 playerPositionAssociationRepository.saveAll(playerPositionAssociations);
                 playerClubAssociationRepository.saveAll(playerClubAssociations);
                 playerSkillAssociationRepository.saveAll(playerSkillAssociations);
+
             }
         }
+
+        log.info("총 {} 명 선수 생성 성공 {}s 소요", players.size(), (System.currentTimeMillis() - startTime) / 1000);
+        log.info("남은 선수 : {} 명", spIdList.size() - players.size());
     }
 
     public List<CheckPlayerPriceDto> checkPrice() {
