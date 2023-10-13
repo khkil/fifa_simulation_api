@@ -5,7 +5,6 @@ import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,7 +27,7 @@ public class BatchController {
 
     @PostMapping("/players")
     public ResponseEntity<ApiResponse<?>> createPlayers() {
-        batchService.createPlayerWithPrice();
+        batchService.createPlayers();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("선수 생성 성공"));
     }
 
@@ -46,8 +45,7 @@ public class BatchController {
         batchService.createSeasons();
         batchService.createPositions();
         batchService.createSkills();
-
-        batchService.createPlayerWithPrice();
+        batchService.createPlayers();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("전체 데이터 생성 성공"));
     }
 

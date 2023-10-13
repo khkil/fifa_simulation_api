@@ -31,7 +31,6 @@ import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
 import com.simulation.fifa.api.skill.repository.SkillRepository;
 import com.simulation.fifa.util.RegexUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -244,14 +243,9 @@ public class BatchService {
         }
     }
 
-    @Transactional
-    public void createPlayerWithPrice() {
-        createPlayers();
-        createPriceHistories();
-    }
-
-    private void createPlayers() {
+    public void createPlayers() {
         List<Player> players = new ArrayList<>();
+        List<PlayerPrice> playerPriceList = new ArrayList<>();
         List<PlayerPositionAssociation> playerPositionAssociations = new ArrayList<>();
         List<PlayerClubAssociation> playerClubAssociations = new ArrayList<>();
         List<PlayerSkillAssociation> playerSkillAssociations = new ArrayList<>();
@@ -361,11 +355,17 @@ public class BatchService {
                         )
                         .toList();
 
+                // 선수 시세 설정
+                playerPriceList.addAll(makePriceHistories(player));
+
+
                 players.add(player);
             } catch (IOException e) {
                 log.error("선수 생성 오류 {0}", e);
             } finally {
+
                 playerRepository.saveAll(players);
+                playerPriceRepository.saveAll(playerPriceList);
                 playerPositionAssociationRepository.saveAll(playerPositionAssociations);
                 playerClubAssociationRepository.saveAll(playerClubAssociations);
                 playerSkillAssociationRepository.saveAll(playerSkillAssociations);
@@ -373,76 +373,67 @@ public class BatchService {
         }
     }
 
-    private void createPriceHistories() {
-        List<Player> players = playerRepository.findAll();
+    private Set<PlayerPrice> makePriceHistories(Player player) {
         Set<PlayerPrice> playerPriceList = new HashSet<>();
-        for (Player player : players) {
-            try {
-                for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
-                    Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
-                            .data("spid", String.valueOf(player.getId()))
-                            .data("n1Strong", String.valueOf(i))
-                            .post();
-                    long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
-                    // 현재 가격 설정
-                    PlayerPrice nowPlayerPrice = PlayerPrice
-                            .builder()
-                            .player(player)
-                            .price(nowPrice)
-                            .upgradeValue(i)
-                            .date(LocalDate.now())
-                            .createAt(LocalDateTime.now())
-                            .build();
-                    playerPriceList.add(nowPlayerPrice);
+        try {
+            for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
+                Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
+                        .data("spid", String.valueOf(player.getId()))
+                        .data("n1Strong", String.valueOf(i))
+                        .post();
+                long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
+                // 현재 가격 설정
+                PlayerPrice nowPlayerPrice = PlayerPrice
+                        .builder()
+                        .player(player)
+                        .price(nowPrice)
+                        .upgradeValue(i)
+                        .date(LocalDate.now())
+                        .createAt(LocalDateTime.now())
+                        .build();
+                playerPriceList.add(nowPlayerPrice);
 
-                    String scriptText = document.select("script").get(1).html();
-                    int startIdx = scriptText.indexOf("var json1 = ");
-                    int endIdx = scriptText.indexOf("var option = {", startIdx);
+                String scriptText = document.select("script").get(1).html();
+                int startIdx = scriptText.indexOf("var json1 = ");
+                int endIdx = scriptText.indexOf("var option = {", startIdx);
 
-                    // json 문자열 데이터 파싱
-                    if (startIdx != -1 && endIdx != -1) {
-                        String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
-                        JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
-                        JsonArray timeList = priceJson.getAsJsonArray("time");
-                        JsonArray priceList = priceJson.getAsJsonArray("value");
+                // json 문자열 데이터 파싱
+                if (startIdx != -1 && endIdx != -1) {
+                    String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
+                    JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
+                    JsonArray timeList = priceJson.getAsJsonArray("time");
+                    JsonArray priceList = priceJson.getAsJsonArray("value");
 
-                        for (int y = timeList.size() - KEEP_DAYS; y < timeList.size(); y++) {
-                            String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
-                            String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
+                    for (int y = timeList.size() - KEEP_DAYS; y < timeList.size(); y++) {
+                        String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
+                        String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
 
-                            if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
-                            int month = Integer.parseInt(timeStr.split("\\.")[0]);
-                            int day = Integer.parseInt(timeStr.split("\\.")[1]);
+                        if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
+                        int month = Integer.parseInt(timeStr.split("\\.")[0]);
+                        int day = Integer.parseInt(timeStr.split("\\.")[1]);
 
-                            LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
-                            long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
+                        LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
+                        long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
 
-                            if (date.isAfter(LocalDate.now().minusDays(KEEP_DAYS))) {
-                                PlayerPrice playerPrice = PlayerPrice
-                                        .builder()
-                                        .player(player)
-                                        .price(price)
-                                        .upgradeValue(i)
-                                        .date(date)
-                                        .createAt(LocalDateTime.now())
-                                        .build();
-                                playerPriceList.add(playerPrice);
-                            }
+                        if (date.isAfter(LocalDate.now().minusDays(KEEP_DAYS))) {
+                            PlayerPrice playerPrice = PlayerPrice
+                                    .builder()
+                                    .player(player)
+                                    .price(price)
+                                    .upgradeValue(i)
+                                    .date(date)
+                                    .createAt(LocalDateTime.now())
+                                    .build();
+                            playerPriceList.add(playerPrice);
                         }
                     }
                 }
-
-            } catch (IOException e) {
-                log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
             }
 
+        } catch (IOException e) {
+            log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
         }
-        // 갱신된 가격 목록있으면 초기화
-        if (!playerPriceList.isEmpty()) {
-            playerPriceRepository.saveAll(playerPriceList);
-        } else {
-            log.error("갱신된 목록이 존재하지 않습니다.");
-        }
+        return playerPriceList;
     }
 
     private List<SeasonIdDto> getSeasonIdList() {
