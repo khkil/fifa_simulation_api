@@ -16,6 +16,8 @@ import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.club.repository.ClubRepository;
 import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.league.repository.LeagueRepository;
+import com.simulation.fifa.api.nation.entity.Nation;
+import com.simulation.fifa.api.nation.repository.NationRepository;
 import com.simulation.fifa.api.player.dto.PlayerBatchDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.entity.PreferredFootEnum;
@@ -70,6 +72,8 @@ public class BatchService {
     LeagueRepository leagueRepository;
     @Autowired
     PlayerRepository playerRepository;
+    @Autowired
+    NationRepository nationRepository;
     @Autowired
     PositionRepository positionRepository;
     @Autowired
@@ -146,6 +150,28 @@ public class BatchService {
         }
     }
 
+    public void createNations() {
+        List<Nation> nations = new ArrayList<>();
+        try {
+            Document document = Jsoup.connect(siteUrl + "/datacenter").get();
+            nations = document.getElementsByClass("nationality_list").get(0).getElementsByTag("span").stream()
+                    .map(Element::html)
+                    .filter(v -> !v.equals("국적"))
+                    .collect(Collectors.toSet())
+                    .stream().map(nation -> Nation
+                            .builder()
+                            .nationName(nation)
+                            .build()
+                    )
+                    .toList();
+
+        } catch (IOException e) {
+            log.error("선수 스킬 생성 오류 {0}", e);
+        } finally {
+            nationRepository.saveAll(nations);
+        }
+    }
+
     public void createPositions() {
         List<Position> positions = getPositions().stream().map(p -> p.toEntity(p)).toList();
         positionRepository.saveAll(positions);
@@ -185,6 +211,7 @@ public class BatchService {
         List<PlayerSkillAssociation> playerSkillAssociations = new ArrayList<>();
 
         Map<Long, Season> seasonMap = seasonRepository.findAll().stream().collect(Collectors.toMap(Season::getId, season -> season));
+        Map<String, Nation> nationMap = nationRepository.findAll().stream().collect(Collectors.toMap(Nation::getNationName, nation -> nation));
         Map<String, Position> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getPositionName, position -> position));
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
@@ -228,6 +255,10 @@ public class BatchService {
                 }
 
                 Player player = playerInfo.toEntity(playerInfo);
+
+                // 선수 국가 설정
+                Nation nation = nationMap.get(document.getElementsByClass("info_team").get(0).getElementsByClass("txt").get(0).html());
+                player.updateNation(nation);
 
                 // 선수 시즌 설정
                 Long seasonId = Long.parseLong(spId.toString().substring(0, 3));

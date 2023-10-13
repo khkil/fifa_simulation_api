@@ -30,6 +30,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>(SUCCESS_STATUS, data, null);
     }
 
+    public static <T> ApiResponse<T> createSuccessWithMessage(String message) {
+        return new ApiResponse<>(SUCCESS_STATUS, null, message);
+    }
+
     public static ApiResponse<?> createSuccessWithNoContent() {
         return new ApiResponse<>(SUCCESS_STATUS, null, null);
     }

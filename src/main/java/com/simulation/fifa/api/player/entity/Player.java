@@ -4,6 +4,7 @@ import com.simulation.fifa.api.association.entity.PlayerClubAssociation;
 import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
 import com.simulation.fifa.api.association.entity.PlayerSkillAssociation;
 import com.simulation.fifa.api.club.entity.Club;
+import com.simulation.fifa.api.nation.entity.Nation;
 import com.simulation.fifa.api.price.entity.PlayerPrice;
 import com.simulation.fifa.api.season.entity.Season;
 import jakarta.persistence.*;
@@ -101,6 +102,9 @@ public class Player implements Persistable<Long> {
     private Integer pay;
 
     @ManyToOne
+    Nation nation;
+
+    @ManyToOne
     Season season;
 
     @OneToMany(mappedBy = "player")
@@ -112,12 +116,15 @@ public class Player implements Persistable<Long> {
     @OneToMany(mappedBy = "player")
     Set<PlayerSkillAssociation> playerSkillAssociations;
 
-
     @OneToMany(mappedBy = "player")
     Set<PlayerPrice> priceList;
 
     public void updateSeason(Season season) {
         this.season = season;
+    }
+
+    public void updateNation(Nation nation) {
+        this.nation = nation;
     }
 
     /*******************************
