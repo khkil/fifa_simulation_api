@@ -16,6 +16,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Table(uniqueConstraints = {
+        @UniqueConstraint(
+                columnNames = {"player_id", "upgradeValue", "date"}
+        )
+})
 public class PlayerPrice {
     @Id
     @GeneratedValue(strategy = GenerationType.TABLE)

@@ -4,7 +4,6 @@ import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,23 +15,27 @@ public class BatchController {
     @Autowired
     BatchService batchService;
 
-    @PostMapping("/nations")
+    @PostMapping("/base-informations")
     public ResponseEntity<ApiResponse<?>> createNations() {
-        batchService.createNations();
-        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("국가 생성 성공"));
-    }
-
-    @PostMapping("/clubs")
-    public ResponseEntity<ApiResponse<?>> createClubs() {
         batchService.createLeagues();
         batchService.createClubs();
-        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("리그 & 클럽 생성 성공"));
+        batchService.createNations();
+        batchService.createSeasons();
+        batchService.createPositions();
+        batchService.createSkills();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("기본 정보 생성 성공"));
     }
 
     @PostMapping("/players")
     public ResponseEntity<ApiResponse<?>> createPlayers() {
-        batchService.createPlayers();
+        batchService.createPlayerWithPrice();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("선수 생성 성공"));
+    }
+
+    @PostMapping("/daily-price")
+    public ResponseEntity<ApiResponse<?>> createDailyPrice() {
+        batchService.createDailyPrice();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("오늘자 시세 생성 성공"));
     }
 
     @PostMapping("/all")
@@ -43,7 +46,8 @@ public class BatchController {
         batchService.createSeasons();
         batchService.createPositions();
         batchService.createSkills();
-        batchService.createPlayers();
+
+        batchService.createPlayerWithPrice();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("전체 데이터 생성 성공"));
     }
 
@@ -51,11 +55,5 @@ public class BatchController {
     public ResponseEntity<ApiResponse<?>> bulk() {
         batchService.bulkTest();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("bulk test 성공"));
-    }
-
-    @PutMapping("/price")
-    public ResponseEntity<ApiResponse<?>> updatePrice() {
-        batchService.updatePriceHistory();
-        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("시세 갱신 성공"));
     }
 }

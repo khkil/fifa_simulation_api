@@ -31,6 +31,7 @@ import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
 import com.simulation.fifa.api.skill.repository.SkillRepository;
 import com.simulation.fifa.util.RegexUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -40,7 +41,6 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -55,7 +55,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class BatchService {
-    private final JdbcTemplate jdbcTemplate;
+    private final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
+    private final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
+
+    private final int ONCE_CREATE_PLAYER_COUNT = 20; // 선수 배치 저장시 한번에 저장될 갯수
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -204,7 +207,50 @@ public class BatchService {
         seasonRepository.saveAll(seasons);
     }
 
-    public void createPlayers() {
+    public void createDailyPrice() {
+        List<Player> players = playerRepository.findAll();
+        Set<PlayerPrice> playerPriceList = new HashSet<>();
+        for (Player player : players) {
+            try {
+                for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
+                    Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
+                            .data("spid", String.valueOf(player.getId()))
+                            .data("n1Strong", String.valueOf(i))
+                            .post();
+                    long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
+                    // 현재 가격 설정
+                    PlayerPrice nowPlayerPrice = PlayerPrice
+                            .builder()
+                            .player(player)
+                            .price(nowPrice)
+                            .upgradeValue(i)
+                            .date(LocalDate.now())
+                            .createAt(LocalDateTime.now())
+                            .build();
+                    playerPriceList.add(nowPlayerPrice);
+                }
+
+            } catch (IOException e) {
+                log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
+            }
+
+        }
+        // 갱신된 가격 목록있으면 초기화
+        if (!playerPriceList.isEmpty()) {
+            playerPriceRepository.deleteAll();
+            playerPriceRepository.saveAll(playerPriceList);
+        } else {
+            log.error("갱신된 목록이 존재하지 않습니다.");
+        }
+    }
+
+    @Transactional
+    public void createPlayerWithPrice() {
+        createPlayers();
+        createPriceHistories();
+    }
+
+    private void createPlayers() {
         List<Player> players = new ArrayList<>();
         List<PlayerPositionAssociation> playerPositionAssociations = new ArrayList<>();
         List<PlayerClubAssociation> playerClubAssociations = new ArrayList<>();
@@ -216,9 +262,14 @@ public class BatchService {
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
 
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 30);
+        Set<Long> allPlayers = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
+        Set<SpIdDto> allSpIdList = getPlayerSpIdList();
 
-        for (SpIdDto spidDto : spIdList) {
+        List<SpIdDto> spIdList = allSpIdList.stream().filter(v -> !allPlayers.contains(v.getId())).toList();
+
+        log.info("남은 선수 : {} 명", spIdList.size());
+
+        for (SpIdDto spidDto : spIdList.subList(0, ONCE_CREATE_PLAYER_COUNT)) {
             Long spId = spidDto.getId();
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
@@ -322,15 +373,12 @@ public class BatchService {
         }
     }
 
-    public void updatePriceHistory() {
-        final int maxUpgradeValue = 10; // 선수 +10 단계 까지 저장
-        final int keepDays = 30; //30일 동안의 가격 데이터 만 저장
-
+    private void createPriceHistories() {
         List<Player> players = playerRepository.findAll();
         Set<PlayerPrice> playerPriceList = new HashSet<>();
         for (Player player : players) {
             try {
-                for (int i = 1; i <= maxUpgradeValue; i++) {
+                for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
                             .data("spid", String.valueOf(player.getId()))
                             .data("n1Strong", String.valueOf(i))
@@ -347,18 +395,18 @@ public class BatchService {
                             .build();
                     playerPriceList.add(nowPlayerPrice);
 
-                    // 이전 날짜 가격 설정
                     String scriptText = document.select("script").get(1).html();
                     int startIdx = scriptText.indexOf("var json1 = ");
                     int endIdx = scriptText.indexOf("var option = {", startIdx);
 
+                    // json 문자열 데이터 파싱
                     if (startIdx != -1 && endIdx != -1) {
                         String priceJsonStr = scriptText.substring(startIdx + 12, endIdx).trim();
                         JsonObject priceJson = JsonParser.parseString(priceJsonStr).getAsJsonObject();
                         JsonArray timeList = priceJson.getAsJsonArray("time");
                         JsonArray priceList = priceJson.getAsJsonArray("value");
 
-                        for (int y = 0; y < timeList.size(); y++) {
+                        for (int y = timeList.size() - KEEP_DAYS; y < timeList.size(); y++) {
                             String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
                             String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
 
@@ -369,7 +417,7 @@ public class BatchService {
                             LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
                             long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
 
-                            if (date.isAfter(LocalDate.now().minusDays(keepDays))) {
+                            if (date.isAfter(LocalDate.now().minusDays(KEEP_DAYS))) {
                                 PlayerPrice playerPrice = PlayerPrice
                                         .builder()
                                         .player(player)
@@ -391,7 +439,6 @@ public class BatchService {
         }
         // 갱신된 가격 목록있으면 초기화
         if (!playerPriceList.isEmpty()) {
-            playerPriceRepository.deleteAll();
             playerPriceRepository.saveAll(playerPriceList);
         } else {
             log.error("갱신된 목록이 존재하지 않습니다.");
@@ -432,7 +479,7 @@ public class BatchService {
                 .block();
     }
 
-    private List<SpIdDto> getPlayerSpidList() {
+    private Set<SpIdDto> getPlayerSpIdList() {
         return webClient
                 .mutate()
                 .baseUrl(staticApiUrl)
@@ -443,7 +490,7 @@ public class BatchService {
                         .build()
                 )
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<SpIdDto>>() {
+                .bodyToMono(new ParameterizedTypeReference<LinkedHashSet<SpIdDto>>() {
                 })
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())))
                 .block();
@@ -462,7 +509,7 @@ public class BatchService {
         long beforeTime = System.currentTimeMillis();
 
         List<Player> players = new ArrayList<>();
-        List<SpIdDto> spIdList = getPlayerSpidList().subList(0, 500);
+        Set<SpIdDto> spIdList = getPlayerSpIdList();
 
         try {
             //To-do 데이터 셋팅 후 신규 시즌 선수 추가시 skip 하는 로직 구현
