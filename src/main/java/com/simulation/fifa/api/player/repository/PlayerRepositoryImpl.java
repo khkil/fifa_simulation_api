@@ -1,10 +1,8 @@
 package com.simulation.fifa.api.player.repository;
 
-import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
-import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto;
@@ -25,11 +23,10 @@ import java.util.*;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
-import static com.querydsl.core.group.GroupBy.max;
 import static com.querydsl.core.group.GroupBy.list;
-import static com.simulation.fifa.api.association.entity.QPlayerClubAssociation.playerClubAssociation;
-import static com.simulation.fifa.api.association.entity.QPlayerPositionAssociation.playerPositionAssociation;
-import static com.simulation.fifa.api.association.entity.QPlayerSkillAssociation.playerSkillAssociation;
+import static com.simulation.fifa.api.associations.entity.QPlayerClubAssociation.playerClubAssociation;
+import static com.simulation.fifa.api.associations.entity.QPlayerPositionAssociation.playerPositionAssociation;
+import static com.simulation.fifa.api.associations.entity.QPlayerSkillAssociation.playerSkillAssociation;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.position.entity.QPosition.position;
 import static com.simulation.fifa.api.season.entity.QSeason.season;

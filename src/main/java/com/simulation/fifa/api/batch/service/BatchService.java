@@ -3,12 +3,12 @@ package com.simulation.fifa.api.batch.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.simulation.fifa.api.association.entity.PlayerClubAssociation;
-import com.simulation.fifa.api.association.entity.PlayerPositionAssociation;
-import com.simulation.fifa.api.association.entity.PlayerSkillAssociation;
-import com.simulation.fifa.api.association.repository.PlayerClubAssociationRepository;
-import com.simulation.fifa.api.association.repository.PlayerPositionAssociationRepository;
-import com.simulation.fifa.api.association.repository.PlayerSkillAssociationRepository;
+import com.simulation.fifa.api.associations.entity.PlayerClubAssociation;
+import com.simulation.fifa.api.associations.entity.PlayerPositionAssociation;
+import com.simulation.fifa.api.associations.entity.PlayerSkillAssociation;
+import com.simulation.fifa.api.associations.repository.PlayerClubAssociationRepository;
+import com.simulation.fifa.api.associations.repository.PlayerPositionAssociationRepository;
+import com.simulation.fifa.api.associations.repository.PlayerSkillAssociationRepository;
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.SeasonIdDto;
 import com.simulation.fifa.api.batch.dto.SpIdDto;
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 50; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 200; // 선수 배치 저장시 한번에 저장될 갯수
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -123,7 +123,6 @@ public class BatchService {
         try {
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
             Elements elements = document.getElementsByClass("club_list").get(0).getElementsByTag("a");
-            int size = elements.size();
             for (Element el : elements) {
                 long leagueId = parseLeagueId(el);
 
@@ -240,11 +239,7 @@ public class BatchService {
     public void createPlayers() {
         long startTime = System.currentTimeMillis();
 
-        List<Player> players = new ArrayList<>();
-        List<PlayerPrice> playerPriceList = new ArrayList<>();
-        List<PlayerPositionAssociation> playerPositionAssociations = new ArrayList<>();
-        List<PlayerClubAssociation> playerClubAssociations = new ArrayList<>();
-        List<PlayerSkillAssociation> playerSkillAssociations = new ArrayList<>();
+        Set<Player> players = new LinkedHashSet<>();
 
         Map<Long, Season> seasonMap = seasonRepository.findAll().stream().collect(Collectors.toMap(Season::getId, season -> season));
         Map<String, Nation> nationMap = nationRepository.findAll().stream().collect(Collectors.toMap(Nation::getNationName, nation -> nation));
@@ -259,6 +254,10 @@ public class BatchService {
 
         for (SpIdDto spidDto : spIdList.subList(0, ONCE_CREATE_PLAYER_COUNT)) {
             Long spId = spidDto.getId();
+            Set<PlayerPrice> playerPriceList = new LinkedHashSet<>();
+            Set<PlayerPositionAssociation> playerPositionAssociations;
+            Set<PlayerClubAssociation> playerClubAssociations = new LinkedHashSet<>();
+            Set<PlayerSkillAssociation> playerSkillAssociations = new LinkedHashSet<>();
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
 
@@ -304,7 +303,6 @@ public class BatchService {
                 Season season = seasonMap.get(seasonId);
                 player.updateSeason(season);
 
-
                 // 선수 포지션 설정
                 playerPositionAssociations = document.getElementsByClass("info_ab").get(0).getElementsByClass("position")
                         .stream()
@@ -315,8 +313,7 @@ public class BatchService {
                                 .overall(Integer.parseInt(el.getElementsByClass("value").get(0).html()) + 3)
                                 .build()
                         )
-                        .toList();
-
+                        .collect(Collectors.toSet());
 
                 // 선수 클럽 설정
                 playerClubAssociations = document.getElementsByClass("data_detail_club").get(0).getElementsByTag("li")
@@ -334,8 +331,7 @@ public class BatchService {
                                             .build();
                                 }
                         )
-                        .toList();
-
+                        .collect(Collectors.toSet());
 
                 // 선수 스킬 설정
                 playerSkillAssociations = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span")
@@ -347,26 +343,23 @@ public class BatchService {
                                 .skill(skillMap.get(el.html()))
                                 .build()
                         )
-                        .toList();
+                        .collect(Collectors.toSet());
 
-                // 선수 시세 설정
-                playerPriceList.addAll(makePriceHistories(player));
-
+                player.updatePlayerClubAssociations(playerClubAssociations);
+                player.updatePlayerPositionAssociations(playerPositionAssociations);
+                player.updatePlayerSkillAssociations(playerSkillAssociations);
+                player.updatePriceList(makePriceHistories(player));
 
                 players.add(player);
             } catch (IOException e) {
                 log.error("선수 생성 오류 {0}", e);
-            } finally {
-
-                playerRepository.saveAll(players);
-                playerPriceRepository.saveAll(playerPriceList);
-                playerPositionAssociationRepository.saveAll(playerPositionAssociations);
-                playerClubAssociationRepository.saveAll(playerClubAssociations);
-                playerSkillAssociationRepository.saveAll(playerSkillAssociations);
-
             }
         }
 
+        long domParsingEndTime = System.currentTimeMillis();
+        playerRepository.saveAll(players);
+
+        log.info("jsoup 파싱 총 {}s 소요", (domParsingEndTime - startTime) / 1000);
         log.info("총 {} 명 선수 생성 성공 {}s 소요", players.size(), (System.currentTimeMillis() - startTime) / 1000);
         log.info("남은 선수 : {} 명", spIdList.size() - players.size());
     }
