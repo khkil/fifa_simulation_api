@@ -8,6 +8,7 @@ import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto_Date;
 import com.simulation.fifa.api.club.dto.QClubListDto;
+
 import com.simulation.fifa.api.player.dto.*;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
@@ -33,6 +34,7 @@ import static com.simulation.fifa.api.season.entity.QSeason.season;
 import static com.simulation.fifa.api.club.entity.QClub.club;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
 import static com.simulation.fifa.api.skill.entity.QSkill.skill;
+import static com.simulation.fifa.api.nation.entity.QNation.nation;
 
 @RequiredArgsConstructor
 public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
@@ -44,7 +46,8 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),
-                nameContains(playerSearchDto.getName())
+                nameContains(playerSearchDto.getName()),
+                nationIdsIn(playerSearchDto.getNationIds())
         };
         Set<Long> playerIds = new HashSet<>(
                 jpaQueryFactory
@@ -55,6 +58,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         .join(player.playerClubAssociations, playerClubAssociation)
                         .join(playerClubAssociation.club, club)
                         .join(player.season, season)
+                        .join(player.nation, nation)
                         .offset(pageable.getOffset())
                         .limit(pageable.getPageSize())
                         .groupBy(player.id)
@@ -239,6 +243,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
     private BooleanExpression skillIdsIn(Long[] skillIds) {
         return skillIds != null && skillIds.length > 0 ? skill.id.in(skillIds) : null;
+    }
+
+    private BooleanExpression nationIdsIn(Long[] nationIds) {
+        return nationIds != null && nationIds.length > 0 ? nation.id.in(nationIds) : null;
     }
 
     private BooleanExpression nameContains(String name) {
