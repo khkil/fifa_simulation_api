@@ -118,7 +118,7 @@ public class BatchService {
     public void createClubs() {
 
         List<Club> clubs = new ArrayList<>();
-        Map<Long, League> leagueMap = leagueRepository.findAll().stream().collect(Collectors.toMap(League::getId, League -> League));
+        Map<Long, League> leagueMap = leagueRepository.findAll().stream().collect(Collectors.toMap(League::getId, league -> league));
 
         try {
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
@@ -222,7 +222,7 @@ public class BatchService {
                             .builder()
                             .player(player)
                             .price(nowPrice)
-                            .upgradeValue(i)
+                            .grade(i)
                             .date(LocalDate.now())
                             .createAt(LocalDateTime.now())
                             .build();
@@ -382,7 +382,7 @@ public class BatchService {
                         .builder()
                         .player(player)
                         .price(nowPrice)
-                        .upgradeValue(i)
+                        .grade(i)
                         .date(LocalDate.now())
                         .createAt(LocalDateTime.now())
                         .build();
@@ -415,7 +415,7 @@ public class BatchService {
                                     .builder()
                                     .player(player)
                                     .price(price)
-                                    .upgradeValue(i)
+                                    .grade(i)
                                     .date(date)
                                     .createAt(LocalDateTime.now())
                                     .build();

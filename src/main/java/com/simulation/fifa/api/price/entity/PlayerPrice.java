@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Getter
 @Table(uniqueConstraints = {
         @UniqueConstraint(
-                columnNames = {"player_id", "upgradeValue", "date"}
+                columnNames = {"player_id", "grade", "date"}
         )
 })
 public class PlayerPrice {
@@ -28,7 +28,7 @@ public class PlayerPrice {
 
     private Long price;
 
-    private Integer upgradeValue;
+    private Integer grade;
 
     private LocalDate date;
 

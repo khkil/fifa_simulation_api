@@ -12,7 +12,9 @@ public class UserTradeListDto {
     private String saleSn;
     private Long spid;
     private String playerName;
+    private String tradeType;
     private SeasonListDto season;
     private Integer grade;
+    private Long recentPrice;
     private Long value;
 }

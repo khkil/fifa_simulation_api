@@ -94,7 +94,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .orderBy(
                         playerPositionAssociation.overall.desc(),
                         player.id.desc(),
-                        playerPrice.upgradeValue.asc()
+                        playerPrice.grade.asc()
                 )
                 .transform(groupBy(player.id)
                         .list(new QPlayerListDto(
@@ -106,7 +106,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 player.rightFoot,
                                 set(new QPlayerPriceListDto(
                                         playerPrice.price,
-                                        playerPrice.upgradeValue
+                                        playerPrice.grade
                                 )),
                                 new QPlayerListDto_Average(
                                         speedAvg(),
