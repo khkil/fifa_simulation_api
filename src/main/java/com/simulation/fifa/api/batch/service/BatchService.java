@@ -32,6 +32,7 @@ import com.simulation.fifa.api.season.repository.SeasonRepository;
 import com.simulation.fifa.api.skill.entity.Skill;
 import com.simulation.fifa.api.skill.repository.SkillRepository;
 import com.simulation.fifa.util.RegexUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -246,7 +247,16 @@ public class BatchService {
         }
     }
 
+    @Transactional
     public void createPlayers() {
+        Set<SpIdDto> allSpIdList = getPlayerSpIdList();
+        Set<Long> allPlayers = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
+        Set<Long> remainPlayers = allSpIdList.stream().map(SpIdDto::getId).filter(v -> !allPlayers.contains(v)).collect(Collectors.toSet());
+        createPlayers(remainPlayers);
+    }
+
+    @Transactional
+    public void createPlayers(Set<Long> remainPlayers) {
         long startTime = System.currentTimeMillis();
 
         Set<Player> players = new LinkedHashSet<>();
@@ -257,17 +267,17 @@ public class BatchService {
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
 
-        Set<Long> allPlayers = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
         Set<SpIdDto> allSpIdList = getPlayerSpIdList();
 
         List<SpIdDto> spIdList = allSpIdList.stream()
-                .filter(v -> !allPlayers.contains(v.getId()))
+                .filter(v -> remainPlayers.contains(v.getId()))
                 .filter(v -> !IGNORE_PLAYERS.contains(v.getId()))
                 .toList();
 
-        for (SpIdDto spidDto : spIdList.subList(0, ONCE_CREATE_PLAYER_COUNT)) {
+        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size());
+
+        for (SpIdDto spidDto : spIdList.subList(0, createSize)) {
             Long spId = spidDto.getId();
-            Set<PlayerPrice> playerPriceList = new LinkedHashSet<>();
             Set<PlayerPositionAssociation> playerPositionAssociations;
             Set<PlayerClubAssociation> playerClubAssociations = new LinkedHashSet<>();
             Set<PlayerSkillAssociation> playerSkillAssociations = new LinkedHashSet<>();
@@ -381,6 +391,10 @@ public class BatchService {
 
     public List<CheckPlayerPriceDto> checkPrice() {
         return playerRepository.findCheckPrice();
+    }
+
+    private void createPlayer(long spId) {
+
     }
 
     private Set<PlayerPrice> makePriceHistories(Player player) {

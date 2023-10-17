@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.user.service;
 
+import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
@@ -19,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -35,6 +37,8 @@ public class UserService {
     PlayerRepository playerRepository;
     @Autowired
     PlayerPriceRepository playerPriceRepository;
+    @Autowired
+    BatchService batchService;
 
     public List<UserTradeListDto> findAllTradeList(String nickname, UserTradeRequestDto userTradeRequestDto) {
         UserDto user = getUserInfo(nickname);
@@ -65,6 +69,13 @@ public class UserService {
 
         List<Player> players = playerRepository.findAllByIdIn(spIdList);
         List<PlayerRecentPriceDto> priceList = playerPriceRepository.findRecentPriceList(spIdList, gradeList);
+
+        // 유저의 거래 내역 조희중 크롤링 미 완료된 데이터 생성
+        if (new HashSet<>(players).size() < new HashSet<>(spIdList).size()) {
+            Set<Long> playerIdSet = new HashSet<>(players).stream().map(Player::getId).collect(Collectors.toSet());
+            Set<Long> missedPlayers = new HashSet<>(spIdList).stream().filter(v -> !playerIdSet.contains(v)).collect(Collectors.toSet());
+            batchService.createPlayers(missedPlayers);
+        }
 
         for (Player player : players) {
             for (UserTradeListDto trade : joinedList) {
