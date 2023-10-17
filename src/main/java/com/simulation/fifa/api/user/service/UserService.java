@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -36,45 +37,37 @@ public class UserService {
     PlayerPriceRepository playerPriceRepository;
 
     public List<UserTradeListDto> findAllTradeList(String nickname, UserTradeRequestDto userTradeRequestDto) {
-        String tradeType = userTradeRequestDto.getTradeType();
         UserDto user = getUserInfo(nickname);
 
-        List<UserTradeListDto> userTradeList = new ArrayList<>();
+        List<UserTradeListDto> buyList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
+                .builder()
+                .tradeType("buy")
+                .offset(userTradeRequestDto.getOffset())
+                .limit(userTradeRequestDto.getLimit())
+                .build()
+        );
 
-        if (tradeType.equals("all")) {
-            new UserTradeRequestDto();
-            List<UserTradeListDto> buyList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
-                    .builder()
-                    .tradeType("buy")
-                    .offset(userTradeRequestDto.getOffset())
-                    .limit(userTradeRequestDto.getLimit())
-                    .build()
-            );
-            List<UserTradeListDto> sellList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
-                    .builder()
-                    .tradeType("sell")
-                    .offset(userTradeRequestDto.getOffset())
-                    .limit(userTradeRequestDto.getLimit())
-                    .build()
-            );
-            userTradeList.addAll(buyList);
-            userTradeList.addAll(sellList);
+        List<UserTradeListDto> sellList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
+                .builder()
+                .tradeType("sell")
+                .offset(userTradeRequestDto.getOffset())
+                .limit(userTradeRequestDto.getLimit())
+                .build()
+        );
 
-            userTradeList.sort((a, b) -> b.getTradeDate().compareTo(a.getTradeDate()));
+        List<UserTradeListDto> joinedList = Stream
+                .concat(buyList.stream(), sellList.stream())
+                .sorted((a, b) -> b.getTradeDate().compareTo(a.getTradeDate()))
+                .toList();
 
-        } else {
-            userTradeList.addAll(getUserTradeList(user.getAccessId(), userTradeRequestDto));
-        }
-
-        List<Long> spIdList = userTradeList.stream().map(UserTradeListDto::getSpid).toList();
-        List<Integer> gradeList = userTradeList.stream().map(UserTradeListDto::getGrade).toList();
+        List<Long> spIdList = joinedList.stream().map(UserTradeListDto::getSpid).toList();
+        List<Integer> gradeList = joinedList.stream().map(UserTradeListDto::getGrade).toList();
 
         List<Player> players = playerRepository.findAllByIdIn(spIdList);
-
         List<PlayerRecentPriceDto> priceList = playerPriceRepository.findRecentPriceList(spIdList, gradeList);
 
         for (Player player : players) {
-            for (UserTradeListDto trade : userTradeList) {
+            for (UserTradeListDto trade : joinedList) {
                 if (trade.getSpid().equals(player.getId())) {
                     Season season = player.getSeason();
                     priceList.stream()
@@ -96,7 +89,7 @@ public class UserService {
             }
         }
 
-        return userTradeList;
+        return joinedList;
     }
 
     private UserDto getUserInfo(String nickname) {

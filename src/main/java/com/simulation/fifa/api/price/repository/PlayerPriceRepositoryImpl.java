@@ -1,25 +1,19 @@
 package com.simulation.fifa.api.price.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Tuple;
-import com.querydsl.core.types.Predicate;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
-
-import static com.simulation.fifa.api.player.entity.QPlayer.player;
-import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
-
 import com.simulation.fifa.api.price.dto.QPlayerRecentPriceDto;
-import com.simulation.fifa.api.price.dto.QPlayerRecentPriceDto_PlayerRecentDate;
 import lombok.RequiredArgsConstructor;
 
-import java.beans.Expression;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.group.GroupBy.max;
+import static com.simulation.fifa.api.player.entity.QPlayer.player;
+import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
 
 @RequiredArgsConstructor
 public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
@@ -27,19 +21,24 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
 
     @Override
     public List<PlayerRecentPriceDto> findRecentPriceList(List<Long> playerIds, List<Integer> grades) {
-        LocalDate recentDate = jpaQueryFactory
-                .select(playerPrice.date.max())
-                .from(playerPrice)
-                .fetchOne();
+        Map<Long, LocalDate> recentDatemap = jpaQueryFactory
+                .selectFrom(playerPrice)
+                .join(playerPrice.player, player)
+                .where(player.id.in(playerIds))
+                .transform(groupBy(player.id)
+                        .as(max(playerPrice.date))
+                );
 
         BooleanBuilder conditions = new BooleanBuilder();
         for (int i = 0; i < playerIds.size(); i++) {
             Long playerId = playerIds.get(i);
-            conditions.or(
-                    player.id.eq(playerId)
-                            .and(playerPrice.grade.eq(grades.get(i)))
-                            .and(playerPrice.date.eq(recentDate))
-            );
+            if (recentDatemap.get(playerId) != null) {
+                conditions.or(
+                        player.id.eq(playerId)
+                                .and(playerPrice.grade.eq(grades.get(i)))
+                                .and(playerPrice.date.eq(recentDatemap.get(playerId)))
+                );
+            }
         }
 
         return jpaQueryFactory

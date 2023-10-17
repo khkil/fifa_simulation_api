@@ -182,7 +182,6 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 ));
     }
 
-
     private NumberExpression<Integer> speedAvg() {
         return (player.speed.add(player.acceleration)).divide(2);
     }
