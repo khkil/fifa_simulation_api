@@ -57,7 +57,13 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 200; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 100; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 100; // 선수 데일리 시세 저장시 한번에 저장될 갯수
+    private final List<Long> IGNORE_PLAYERS = List.of(
+            //사이트 금액 데이터 오류
+            300163155L,
+            300167926L
+    );
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -206,21 +212,23 @@ public class BatchService {
     }
 
     public void createDailyPrice() {
-        List<Player> players = playerRepository.findAll();
+        List<Long> notRenewalPlayers = playerPriceRepository.findByNotRenewalPrice();
         Set<PlayerPrice> playerPriceList = new HashSet<>();
+        int totalCount = Math.min(notRenewalPlayers.size(), ONCE_CREATE_PLAYER_PRICE_COUNT);
+        long startTime = System.currentTimeMillis();
 
         try {
-            for (Player player : players) {
+            for (Long playerId : notRenewalPlayers.subList(0, totalCount)) {
                 for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
-                            .data("spid", String.valueOf(player.getId()))
+                            .data("spid", String.valueOf(playerId))
                             .data("n1Strong", String.valueOf(i))
                             .post();
                     long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
                     // 현재 가격 설정
                     PlayerPrice nowPlayerPrice = PlayerPrice
                             .builder()
-                            .player(player)
+                            .player(Player.builder().id(playerId).build())
                             .price(nowPrice)
                             .grade(i)
                             .date(LocalDate.now())
@@ -233,6 +241,8 @@ public class BatchService {
             log.error("데일리 시세 생성 오류 {0}", e);
         } finally {
             playerPriceRepository.saveAll(playerPriceList);
+            log.info("총 {}건 데일리 시세 생성 총 소요 시간 : {}s", totalCount, (System.currentTimeMillis() - startTime) / 1000);
+            log.info("남은 건수 {}건", Math.max(notRenewalPlayers.size() - ONCE_CREATE_PLAYER_PRICE_COUNT, 0));
         }
     }
 
@@ -250,7 +260,10 @@ public class BatchService {
         Set<Long> allPlayers = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
         Set<SpIdDto> allSpIdList = getPlayerSpIdList();
 
-        List<SpIdDto> spIdList = allSpIdList.stream().filter(v -> !allPlayers.contains(v.getId())).toList();
+        List<SpIdDto> spIdList = allSpIdList.stream()
+                .filter(v -> !allPlayers.contains(v.getId()))
+                .filter(v -> !IGNORE_PLAYERS.contains(v.getId()))
+                .toList();
 
         for (SpIdDto spidDto : spIdList.subList(0, ONCE_CREATE_PLAYER_COUNT)) {
             Long spId = spidDto.getId();
@@ -352,6 +365,8 @@ public class BatchService {
 
                 players.add(player);
             } catch (IOException e) {
+                log.error("선수 생성 Jsoup 파싱 실패 {0}", e);
+            } catch (Exception e) {
                 log.error("선수 생성 오류 {0}", e);
             }
         }
@@ -424,9 +439,13 @@ public class BatchService {
                     }
                 }
             }
-
         } catch (IOException e) {
-            log.error("선수시세 적용 실패 {1} : {}.", player.getId(), e);
+            log.error("선수 시세 적용 Jsoup 파싱 실패 {0}", e);
+        } catch (Exception e) {
+            log.error("선수 시세 적용 실패 {1} : {}.", player.getId(), e);
+        }
+        if (player.getId() == 300163155) {
+            System.out.println("ddddd");
         }
         return playerPriceList;
     }

@@ -77,7 +77,6 @@ public class UserService {
             for (UserTradeListDto trade : userTradeList) {
                 if (trade.getSpid().equals(player.getId())) {
                     Season season = player.getSeason();
-
                     priceList.stream()
                             .filter(v -> v.getGrade().equals(trade.getGrade())
                                     && v.getPlayerId().equals(trade.getSpid())

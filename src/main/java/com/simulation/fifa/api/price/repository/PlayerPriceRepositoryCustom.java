@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface PlayerPriceRepositoryCustom {
     List<PlayerRecentPriceDto> findRecentPriceList(List<Long> playerIds, List<Integer> grades);
+
+    List<Long> findByNotRenewalPrice();
 }

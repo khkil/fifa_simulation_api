@@ -6,11 +6,11 @@ import lombok.Data;
 @Data
 public class PlayerPriceListDto {
     private Long price;
-    private Integer upgradeValue;
+    private Integer grade;
 
     @QueryProjection
-    public PlayerPriceListDto(Long price, Integer upgradeValue) {
+    public PlayerPriceListDto(Long price, Integer grade) {
         this.price = price;
-        this.upgradeValue = upgradeValue;
+        this.grade = grade;
     }
 }

@@ -53,4 +53,15 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .where(conditions)
                 .fetch();
     }
+
+    @Override
+    public List<Long> findByNotRenewalPrice() {
+        return jpaQueryFactory
+                .select(playerPrice.player.id)
+                .from(playerPrice)
+                .join(playerPrice.player, player)
+                .groupBy(player.id)
+                .having(playerPrice.date.max().ne(LocalDate.now()))
+                .fetch();
+    }
 }
