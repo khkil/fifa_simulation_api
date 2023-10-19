@@ -30,6 +30,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 );
 
         BooleanBuilder conditions = new BooleanBuilder();
+        
         for (int i = 0; i < playerIds.size(); i++) {
             Long playerId = playerIds.get(i);
             if (recentDatemap.get(playerId) != null) {

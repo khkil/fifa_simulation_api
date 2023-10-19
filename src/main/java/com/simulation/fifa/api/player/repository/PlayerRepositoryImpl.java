@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.player.repository;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -22,9 +23,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.*;
 
-import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.group.GroupBy.set;
-import static com.querydsl.core.group.GroupBy.list;
+import static com.querydsl.core.group.GroupBy.*;
 import static com.simulation.fifa.api.associations.entity.QPlayerClubAssociation.playerClubAssociation;
 import static com.simulation.fifa.api.associations.entity.QPlayerPositionAssociation.playerPositionAssociation;
 import static com.simulation.fifa.api.associations.entity.QPlayerSkillAssociation.playerSkillAssociation;
@@ -49,6 +48,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 nameContains(playerSearchDto.getName()),
                 nationIdsIn(playerSearchDto.getNationIds())
         };
+
         Set<Long> playerIds = new HashSet<>(
                 jpaQueryFactory
                         .select(player.id)
@@ -79,10 +79,24 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .fetch()
                 .size();
 
-        LocalDate maxDate = jpaQueryFactory
-                .select(playerPrice.date.max())
-                .from(playerPrice)
-                .fetchOne();
+        Map<Long, LocalDate> recentDatemap = jpaQueryFactory
+                .selectFrom(playerPrice)
+                .join(playerPrice.player, player)
+                .where(player.id.in(playerIds))
+                .transform(groupBy(player.id)
+                        .as(max(playerPrice.date))
+                );
+
+        BooleanBuilder conditions = new BooleanBuilder();
+
+        for (long playerId : playerIds) {
+            if (recentDatemap.get(playerId) != null) {
+                conditions.or(
+                        player.id.eq(playerId)
+                                .and(playerPrice.date.eq(recentDatemap.get(playerId)))
+                );
+            }
+        }
 
         List<PlayerListDto> players = jpaQueryFactory
                 .selectFrom(player)
@@ -90,7 +104,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .join(playerPositionAssociation.position, position)
                 .join(player.season, season)
                 .join(player.priceList, playerPrice)
-                .where(player.id.in(playerIds), playerPrice.date.eq(maxDate))
+                .where(conditions)
                 .orderBy(
                         playerPositionAssociation.overall.desc(),
                         player.id.desc(),

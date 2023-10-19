@@ -1,8 +1,10 @@
 package com.simulation.fifa.api.user.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
-import com.simulation.fifa.api.user.dto.UserTradeListDto;
-import com.simulation.fifa.api.user.dto.UserTradeRequestDto;
+import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
+import com.simulation.fifa.api.user.dto.match.UserSquadDto;
+import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
+import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.api.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +22,20 @@ public class UserController {
     UserService userService;
 
     @GetMapping("/trades")
+    public ResponseEntity<ApiResponse<?>> getUserInfo(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
+        List<UserTradeListDto> userTradeList = userService.findAllTradeList(nickname, userTradeRequestDto);
+        return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
+    }
+
+    @GetMapping("/trades")
     public ResponseEntity<ApiResponse<?>> getUserTradeInfo(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
         List<UserTradeListDto> userTradeList = userService.findAllTradeList(nickname, userTradeRequestDto);
+        return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
+    }
+
+    @GetMapping("/squad")
+    public ResponseEntity<ApiResponse<?>> getUserSquad(@RequestParam String nickname) {
+        List<UserSquadDto> userTradeList = userService.searchUserSquad(nickname);
         return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
     }
 }

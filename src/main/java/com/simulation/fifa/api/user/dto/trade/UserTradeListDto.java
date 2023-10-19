@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.dto;
+package com.simulation.fifa.api.user.dto.trade;
 
 import com.querydsl.core.annotations.QueryProjection;
 import com.simulation.fifa.api.season.dto.SeasonListDto;
