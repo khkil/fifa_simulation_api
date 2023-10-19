@@ -11,6 +11,7 @@ import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto_Date;
 import com.simulation.fifa.api.club.dto.QClubListDto;
 
 import com.simulation.fifa.api.player.dto.*;
+import com.simulation.fifa.api.position.dto.PositionDto;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
 
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -41,7 +43,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
     @Override
     public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
+
+
         Predicate[] whereConditions = new Predicate[]{
+                season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),
@@ -49,31 +54,33 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 nationIdsIn(playerSearchDto.getNationIds())
         };
 
-        Set<Long> playerIds = new HashSet<>(
-                jpaQueryFactory
-                        .select(player.id)
-                        .from(player)
-                        .join(player.playerSkillAssociations, playerSkillAssociation)
-                        .join(playerSkillAssociation.skill, skill)
-                        .join(player.playerClubAssociations, playerClubAssociation)
-                        .join(playerClubAssociation.club, club)
-                        .join(player.season, season)
-                        .join(player.nation, nation)
-                        .offset(pageable.getOffset())
-                        .limit(pageable.getPageSize())
-                        .groupBy(player.id)
-                        .where(whereConditions)
-                        .fetch()
-        );
+        List<Long> playerIds = jpaQueryFactory
+                .select(player.id)
+                .from(player)
+                .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
+                .leftJoin(playerSkillAssociation.skill, skill)
+                .leftJoin(player.playerClubAssociations, playerClubAssociation)
+                .leftJoin(playerClubAssociation.club, club)
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
+                .leftJoin(player.season, season)
+                .leftJoin(player.nation, nation)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .groupBy(player.id)
+                .orderBy(playerPositionAssociation.overall.avg().desc())
+                .where(whereConditions)
+                .fetch();
+
 
         int count = jpaQueryFactory
                 .select(player.count())
                 .from(player)
-                .join(player.playerSkillAssociations, playerSkillAssociation)
-                .join(playerSkillAssociation.skill, skill)
-                .join(player.playerClubAssociations, playerClubAssociation)
-                .join(playerClubAssociation.club, club)
-                .join(player.season, season)
+                .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
+                .leftJoin(playerSkillAssociation.skill, skill)
+                .leftJoin(player.playerClubAssociations, playerClubAssociation)
+                .leftJoin(playerClubAssociation.club, club)
+                .leftJoin(player.season, season)
+                .leftJoin(player.nation, nation)
                 .groupBy(player.id)
                 .where(whereConditions)
                 .fetch()
@@ -100,16 +107,11 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
         List<PlayerListDto> players = jpaQueryFactory
                 .selectFrom(player)
-                .join(player.playerPositionAssociations, playerPositionAssociation)
-                .join(playerPositionAssociation.position, position)
-                .join(player.season, season)
-                .join(player.priceList, playerPrice)
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
+                .leftJoin(playerPositionAssociation.position, position)
+                .leftJoin(player.season, season)
+                .leftJoin(player.priceList, playerPrice)
                 .where(conditions)
-                .orderBy(
-                        playerPositionAssociation.overall.desc(),
-                        player.id.desc(),
-                        playerPrice.grade.asc()
-                )
                 .transform(groupBy(player.id)
                         .list(new QPlayerListDto(
                                 player.id,
@@ -141,6 +143,12 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 ))
                         ))
                 );
+
+        players.sort((a, b) -> {
+            double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
+            double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
+            return (int) (avg2 - avg1);
+        });
 
         return new PageImpl<>(players, pageable, count);
     }

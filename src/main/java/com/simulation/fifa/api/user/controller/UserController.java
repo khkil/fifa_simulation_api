@@ -21,7 +21,7 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @GetMapping("/trades")
+    @GetMapping("/info")
     public ResponseEntity<ApiResponse<?>> getUserInfo(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
         List<UserTradeListDto> userTradeList = userService.findAllTradeList(nickname, userTradeRequestDto);
         return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));

@@ -170,6 +170,7 @@ public class UserService {
                 .playerId(playerMap.get(v.getSpId()).getId())
                 .playerName(playerMap.get(v.getSpId()).getName())
                 .positionName(positionMap.get(v.getSpPosition()))
+                .seasonId(playerMap.get(v.getSpId()).getSeason().getId())
                 .seasonName(playerMap.get(v.getSpId()).getSeason().getName())
                 .seasonImgUrl(playerMap.get(v.getSpId()).getSeason().getImageUrl())
                 .grade(gradeMap.get(v.getSpId()))
