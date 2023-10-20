@@ -1,6 +1,7 @@
 package com.simulation.fifa.api.user.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
+import com.simulation.fifa.api.user.dto.UserDto;
 import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
 import com.simulation.fifa.api.user.dto.match.UserSquadDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
@@ -22,9 +23,9 @@ public class UserController {
     UserService userService;
 
     @GetMapping("/info")
-    public ResponseEntity<ApiResponse<?>> getUserInfo(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
-        List<UserTradeListDto> userTradeList = userService.findAllTradeList(nickname, userTradeRequestDto);
-        return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
+    public ResponseEntity<ApiResponse<?>> getUserInfo(@RequestParam String nickname) {
+        UserDto userInfo = userService.findUserInfo(nickname);
+        return ResponseEntity.ok(ApiResponse.createSuccess(userInfo));
     }
 
     @GetMapping("/trades")

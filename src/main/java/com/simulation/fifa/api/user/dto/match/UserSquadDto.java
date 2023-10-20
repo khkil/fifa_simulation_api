@@ -14,6 +14,7 @@ public class UserSquadDto {
     private String playerName;
     private Integer grade;
     private String positionName;
+    private Integer pay;
     private Long seasonId;
     private String seasonName;
     private String seasonImgUrl;

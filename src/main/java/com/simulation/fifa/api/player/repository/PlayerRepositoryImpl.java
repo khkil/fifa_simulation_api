@@ -46,7 +46,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
 
         Predicate[] whereConditions = new Predicate[]{
-                season.id.ne(110L), // 교불 아이콘 제외
+                //season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),

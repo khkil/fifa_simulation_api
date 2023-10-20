@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.user.service;
 
+import com.simulation.fifa.api.batch.dto.SeasonIdDto;
 import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.nation.entity.Nation;
 import com.simulation.fifa.api.player.entity.Player;
@@ -11,9 +12,8 @@ import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
 import com.simulation.fifa.api.season.dto.SeasonListDto;
 import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.user.dto.UserDto;
-import com.simulation.fifa.api.user.dto.match.UserMatchDetailDto;
-import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
-import com.simulation.fifa.api.user.dto.match.UserSquadDto;
+import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
+import com.simulation.fifa.api.user.dto.match.*;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 public class UserService {
     @Value("${nexon.fifa-online.public-api-url}")
     private String publicApiUrl;
+    @Value("${nexon.fifa-online.static-api-url}")
+    private String staticApiUrl;
     @Value("${nexon.fifa-online.api-key}")
     private String apiKey;
 
@@ -48,6 +50,47 @@ public class UserService {
     PositionRepository positionRepository;
     @Autowired
     BatchService batchService;
+
+    public UserDto findUserInfo(String nickname) {
+        UserDto user = getUserInfo(nickname);
+        List<DivisionDto> divisions = getDivisions();
+
+        Map<Integer, String> matchTypeMap = getMatchTypes().stream().collect(Collectors.toMap(MatchTypeDto::getMatchtype, MatchTypeDto::getDesc));
+        Map<Integer, String> divisionMap = divisions.stream().collect(Collectors.toMap(DivisionDto::getDivisionId, DivisionDto::getDivisionName));
+
+        List<UserMatchTopRankDto.origin> topRanksOrigin = webClient
+                .mutate()
+                .baseUrl(publicApiUrl)
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/openapi/fconline/v1.0/users/" + user.getAccessId() + "/maxdivision")
+                        .build()
+                )
+                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<UserMatchTopRankDto.origin>>() {
+                })
+                .onErrorResume(error -> {
+                    log.error("{0}", error);
+                    return Mono.error(new RuntimeException("매치 목록 조회 실패"));
+                })
+                .block();
+
+
+        List<UserMatchTopRankDto.desc> topRanks = topRanksOrigin.stream().map(v -> UserMatchTopRankDto.desc
+                .builder()
+                .matchTypeDesc(matchTypeMap.get(v.getMatchType()))
+                .divisionName(divisionMap.get(v.getDivision()))
+                .divisionImageUrl("https://ssl.nexon.com/s2/game/fo4/obt/rank/large/update_2009/ico_rank" + divisions.stream().map(DivisionDto::getDivisionId).toList().indexOf(v.getDivision()) + ".png")
+                .achievementDate(v.getAchievementDate())
+                .build()
+        ).toList();
+
+        user.setTopRanks(topRanks);
+
+        return user;
+    }
 
     public List<UserTradeListDto> findAllTradeList(String nickname, UserTradeRequestDto userTradeRequestDto) {
         UserDto user = getUserInfo(nickname);
@@ -170,6 +213,7 @@ public class UserService {
                 .playerId(playerMap.get(v.getSpId()).getId())
                 .playerName(playerMap.get(v.getSpId()).getName())
                 .positionName(positionMap.get(v.getSpPosition()))
+                .pay(playerMap.get(v.getSpId()).getPay())
                 .seasonId(playerMap.get(v.getSpId()).getSeason().getId())
                 .seasonName(playerMap.get(v.getSpId()).getSeason().getName())
                 .seasonImgUrl(playerMap.get(v.getSpId()).getSeason().getImageUrl())
@@ -274,5 +318,39 @@ public class UserService {
         tradeList.forEach(v -> v.setTradeType(userTradeRequestDto.getTradeType()));
 
         return tradeList;
+    }
+
+    private List<MatchTypeDto> getMatchTypes() {
+        return webClient
+                .mutate()
+                .baseUrl(staticApiUrl)
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fconline/latest/matchtype.json")
+                        .build()
+                )
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<MatchTypeDto>>() {
+                })
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())))
+                .block();
+    }
+
+    private List<DivisionDto> getDivisions() {
+        return webClient
+                .mutate()
+                .baseUrl(staticApiUrl)
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fconline/latest/division.json")
+                        .build()
+                )
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<DivisionDto>>() {
+                })
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())))
+                .block();
     }
 }
