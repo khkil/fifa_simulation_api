@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 1000; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 10000; // 선수 배치 저장시 한번에 저장될 갯수
     public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 6000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
     private final List<Long> IGNORE_PLAYERS = List.of(
             //사이트 금액 데이터 오류
@@ -385,6 +385,8 @@ public class BatchService {
                 player.updatePriceList(makePriceHistories(player));
 
                 players.add(player);
+
+                log.info("선수 축적 성공 {}", player.getName());
             } catch (IOException e) {
                 log.error("선수 생성 Jsoup 파싱 실패 {0}", e);
             } catch (Exception e) {
