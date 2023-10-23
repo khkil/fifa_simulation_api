@@ -220,11 +220,13 @@ public class BatchService {
         long startTime = System.currentTimeMillis();
 
         try {
-            for (Long playerId : notRenewalPlayers.subList(0, totalCount)) {
-                for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
+            for (int i = 0; i < notRenewalPlayers.subList(0, totalCount).size(); i++) {
+                long playerId = notRenewalPlayers.subList(0, totalCount).get(i);
+                //for (Long playerId : notRenewalPlayers.subList(0, totalCount)) {
+                for (int j = 1; j <= MAX_UPGRADE_VALUE; j++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
                             .data("spid", String.valueOf(playerId))
-                            .data("n1Strong", String.valueOf(i))
+                            .data("n1Strong", String.valueOf(j))
                             .post();
                     long nowPrice = Long.parseLong(RegexUtil.extractNumbers(document.getElementsByClass("add_info").get(0).getElementsByTag("strong").get(0).html()));
                     // 현재 가격 설정
@@ -232,12 +234,13 @@ public class BatchService {
                             .builder()
                             .player(Player.builder().id(playerId).build())
                             .price(nowPrice)
-                            .grade(i)
+                            .grade(j)
                             .date(date)
                             .createAt(LocalDateTime.now())
                             .build();
                     playerPriceList.add(nowPlayerPrice);
                 }
+                log.info("시세 생성 진행률 {}", (double) (i / totalCount) * 100);
             }
         } catch (IOException e) {
             log.error("시세 생성 오류 {0}", e);
@@ -386,7 +389,7 @@ public class BatchService {
 
                 players.add(player);
 
-                log.info("선수 축적 성공 {}", player.getName());
+                log.info("선수 생성 진행률 {}%", (double) (players.size() / createSize) * 100);
             } catch (IOException e) {
                 log.error("선수 생성 Jsoup 파싱 실패 {0}", e);
             } catch (Exception e) {
@@ -404,10 +407,6 @@ public class BatchService {
 
     public List<CheckPlayerPriceDto> checkPrice() {
         return playerRepository.findCheckPrice();
-    }
-
-    private void createPlayer(long spId) {
-
     }
 
     private Set<PlayerPrice> makePriceHistories(Player player) {
