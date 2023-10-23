@@ -1,6 +1,7 @@
 package com.simulation.fifa.api.batch.controller;
 
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
+import com.simulation.fifa.api.batch.dto.PriceDateDto;
 import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +35,18 @@ public class BatchController {
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("선수 생성 성공"));
     }
 
-    /*@PostMapping("/price")
-    public ResponseEntity<ApiResponse<?>> createPrice(@RequestBody ) {
-        batchService.createPrice(localDate);
+    @PostMapping("/price")
+    public ResponseEntity<ApiResponse<?>> createPrice(@RequestBody PriceDateDto priceDateDto) {
+        LocalDate date = priceDateDto.getDate();
+        batchService.deletePreviousPrice();
+        batchService.createPrice(date);
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("시세 생성 성공"));
-    }*/
+    }
 
     @PostMapping("/daily-price")
     public ResponseEntity<ApiResponse<?>> createDailyPrice() {
         LocalDate localDate = LocalDate.now();
+        batchService.deletePreviousPrice();
         batchService.createPrice(localDate);
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("오늘자 시세 생성 성공"));
     }

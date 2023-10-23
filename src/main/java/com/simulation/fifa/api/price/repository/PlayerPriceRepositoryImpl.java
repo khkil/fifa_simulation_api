@@ -56,12 +56,18 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
 
     @Override
     public List<Long> findByNotRenewalPrice(LocalDate localDate) {
-        return jpaQueryFactory
+        List<Long> ids = jpaQueryFactory
                 .select(playerPrice.player.id)
                 .from(playerPrice)
                 .join(playerPrice.player, player)
+                .where(playerPrice.date.eq(localDate))
                 .groupBy(player.id)
-                .having(playerPrice.date.max().ne(localDate))
+                .fetch();
+
+        return jpaQueryFactory
+                .select(player.id)
+                .from(player)
+                .where(player.id.notIn(ids))
                 .fetch();
     }
 
@@ -69,7 +75,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
     public long deletePreviousPrice(LocalDate previousDate) {
         return jpaQueryFactory
                 .delete(playerPrice)
-                .where(playerPrice.date.before(previousDate))
+                .where(playerPrice.date.loe(previousDate))
                 .execute();
     }
 }
