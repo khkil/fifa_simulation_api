@@ -5,11 +5,11 @@ import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.common.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/batch")
@@ -34,10 +34,23 @@ public class BatchController {
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("선수 생성 성공"));
     }
 
+    /*@PostMapping("/price")
+    public ResponseEntity<ApiResponse<?>> createPrice(@RequestBody ) {
+        batchService.createPrice(localDate);
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("시세 생성 성공"));
+    }*/
+
     @PostMapping("/daily-price")
     public ResponseEntity<ApiResponse<?>> createDailyPrice() {
-        batchService.createDailyPrice();
+        LocalDate localDate = LocalDate.now();
+        batchService.createPrice(localDate);
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("오늘자 시세 생성 성공"));
+    }
+
+    @DeleteMapping("/previous-price")
+    public ResponseEntity<ApiResponse<?>> deletePreviousPrice() {
+        batchService.deletePreviousPrice();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("이전 시세 삭제 성공"));
     }
 
     @PostMapping("/check-price")

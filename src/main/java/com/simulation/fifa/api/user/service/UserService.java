@@ -77,7 +77,6 @@ public class UserService {
                 })
                 .block();
 
-
         List<UserMatchTopRankDto.desc> topRanks = topRanksOrigin.stream().map(v -> UserMatchTopRankDto.desc
                 .builder()
                 .matchTypeDesc(matchTypeMap.get(v.getMatchType()))
@@ -132,26 +131,26 @@ public class UserService {
             players = playerRepository.findAllByIdIn(spIdList);
         }
 
-        for (Player player : players) {
-            for (UserTradeListDto trade : joinedList) {
-                if (trade.getSpid().equals(player.getId())) {
-                    Season season = player.getSeason();
-                    priceList.stream()
-                            .filter(v -> v.getGrade().equals(trade.getGrade())
-                                    && v.getPlayerId().equals(trade.getSpid())
-                            )
-                            .findFirst()
-                            .ifPresent(
-                                    playerRecentPriceDto -> trade.setRecentPrice(playerRecentPriceDto.getPrice())
-                            );
+        Map<Long, Player> playerMap = players.stream().collect(Collectors.toMap(Player::getId, player -> player));
+        for (UserTradeListDto trade : joinedList) {
+            Player player = playerMap.get(trade.getSpid());
+            if (trade.getSpid().equals(player.getId())) {
+                Season season = player.getSeason();
+                priceList.stream()
+                        .filter(v -> v.getGrade().equals(trade.getGrade())
+                                && v.getPlayerId().equals(trade.getSpid())
+                        )
+                        .findFirst()
+                        .ifPresent(
+                                playerRecentPriceDto -> trade.setRecentPrice(playerRecentPriceDto.getPrice())
+                        );
 
-                    trade.setPlayerName(player.getName());
-                    trade.setSeason(new SeasonListDto(
-                            season.getId(),
-                            season.getName(),
-                            season.getImageUrl()
-                    ));
-                }
+                trade.setPlayerName(player.getName());
+                trade.setSeason(new SeasonListDto(
+                        season.getId(),
+                        season.getName(),
+                        season.getImageUrl()
+                ));
             }
         }
 

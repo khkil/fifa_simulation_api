@@ -30,7 +30,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 );
 
         BooleanBuilder conditions = new BooleanBuilder();
-        
+
         for (int i = 0; i < playerIds.size(); i++) {
             Long playerId = playerIds.get(i);
             if (recentDatemap.get(playerId) != null) {
@@ -55,13 +55,21 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
     }
 
     @Override
-    public List<Long> findByNotRenewalPrice() {
+    public List<Long> findByNotRenewalPrice(LocalDate localDate) {
         return jpaQueryFactory
                 .select(playerPrice.player.id)
                 .from(playerPrice)
                 .join(playerPrice.player, player)
                 .groupBy(player.id)
-                .having(playerPrice.date.max().ne(LocalDate.now()))
+                .having(playerPrice.date.max().ne(localDate))
                 .fetch();
+    }
+
+    @Override
+    public long deletePreviousPrice(LocalDate previousDate) {
+        return jpaQueryFactory
+                .delete(playerPrice)
+                .where(playerPrice.date.before(previousDate))
+                .execute();
     }
 }

@@ -59,7 +59,7 @@ public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
     public final int ONCE_CREATE_PLAYER_COUNT = 100; // 선수 배치 저장시 한번에 저장될 갯수
-    public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 60000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 1000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
     private final List<Long> IGNORE_PLAYERS = List.of(
             //사이트 금액 데이터 오류
             300163155L,
@@ -212,8 +212,9 @@ public class BatchService {
         seasonRepository.saveAll(seasons);
     }
 
-    public void createDailyPrice() {
-        List<Long> notRenewalPlayers = playerPriceRepository.findByNotRenewalPrice();
+    @Transactional
+    public void createPrice(LocalDate localDate) {
+        List<Long> notRenewalPlayers = playerPriceRepository.findByNotRenewalPrice(localDate);
         Set<PlayerPrice> playerPriceList = new HashSet<>();
         int totalCount = Math.min(notRenewalPlayers.size(), ONCE_CREATE_PLAYER_PRICE_COUNT);
         long startTime = System.currentTimeMillis();
@@ -248,6 +249,13 @@ public class BatchService {
             log.info("총 {}건 데일리 시세 생성 총 소요 시간 : {}s", totalCount, (System.currentTimeMillis() - startTime) / 1000);
             log.info("남은 건수 {}건", Math.max(notRenewalPlayers.size() - ONCE_CREATE_PLAYER_PRICE_COUNT, 0));
         }
+    }
+
+    @Transactional
+    public void deletePreviousPrice() {
+        LocalDate previousDate = LocalDate.now().minusDays(KEEP_DAYS);
+        long count = playerPriceRepository.deletePreviousPrice(previousDate);
+        log.info("총 {} 건 시세 정보 삭제", count);
     }
 
     @Transactional
