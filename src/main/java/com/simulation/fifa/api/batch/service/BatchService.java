@@ -240,7 +240,7 @@ public class BatchService {
                             .build();
                     playerPriceList.add(nowPlayerPrice);
                 }
-                log.info("시세 생성 진행률 {}", (double) (i / totalCount) * 100);
+                log.info("시세 생성 진행률 {}", (float) i / totalCount * 100);
             }
         } catch (IOException e) {
             log.error("시세 생성 오류 {0}", e);
@@ -389,7 +389,7 @@ public class BatchService {
 
                 players.add(player);
 
-                log.info("선수 생성 진행률 {}%", (double) (players.size() / createSize) * 100);
+                log.info("선수 생성 진행률 {}%", (float) players.size() / createSize * 100);
             } catch (IOException e) {
                 log.error("선수 생성 Jsoup 파싱 실패 {0}", e);
             } catch (Exception e) {
