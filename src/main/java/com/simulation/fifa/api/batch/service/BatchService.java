@@ -387,10 +387,6 @@ public class BatchService {
                 player.updatePlayerSkillAssociations(playerSkillAssociations);
                 player.updatePriceList(makePriceHistories(player));
 
-                if (player.getId() == 300186117) {
-                    System.out.println("test");
-                }
-
                 players.add(player);
 
                 log.info("선수 생성 진행률 {}%", (float) players.size() / createSize * 100);
@@ -481,9 +477,7 @@ public class BatchService {
         } catch (Exception e) {
             log.error("선수 시세 적용 실패 {1} : {}.", player.getId(), e);
         }
-        if (player.getId() == 300163155) {
-            System.out.println("ddddd");
-        }
+       
         return playerPriceList;
     }
 
