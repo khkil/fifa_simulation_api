@@ -387,6 +387,10 @@ public class BatchService {
                 player.updatePlayerSkillAssociations(playerSkillAssociations);
                 player.updatePriceList(makePriceHistories(player));
 
+                if (player.getId() == 300186117) {
+                    System.out.println("test");
+                }
+
                 players.add(player);
 
                 log.info("선수 생성 진행률 {}%", (float) players.size() / createSize * 100);
@@ -440,6 +444,8 @@ public class BatchService {
                     JsonArray timeList = priceJson.getAsJsonArray("time");
                     JsonArray priceList = priceJson.getAsJsonArray("value");
 
+                    LocalDateTime nowDateTime = LocalDateTime.now();
+
                     for (int y = timeList.size() - KEEP_DAYS; y < timeList.size(); y++) {
                         String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
                         String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
@@ -451,17 +457,22 @@ public class BatchService {
                         LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
                         long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
 
-                        if (date.isAfter(LocalDate.now().minusDays(KEEP_DAYS))) {
-                            PlayerPrice playerPrice = PlayerPrice
-                                    .builder()
-                                    .player(player)
-                                    .price(price)
-                                    .grade(i)
-                                    .date(date)
-                                    .createAt(LocalDateTime.now())
-                                    .build();
-                            playerPriceList.add(playerPrice);
+                        if (date.isAfter(LocalDate.now()) || date.isEqual(LocalDate.now())) {
+                            continue;
                         }
+                        if (date.isBefore(LocalDate.now().minusDays(KEEP_DAYS - 1))) {
+                            break;
+                        }
+
+                        PlayerPrice playerPrice = PlayerPrice
+                                .builder()
+                                .player(player)
+                                .price(price)
+                                .grade(i)
+                                .date(date)
+                                .createAt(nowDateTime)
+                                .build();
+                        playerPriceList.add(playerPrice);
                     }
                 }
             }
