@@ -216,12 +216,13 @@ public class BatchService {
     public void createPrice(LocalDate date) {
         List<Long> notRenewalPlayers = playerPriceRepository.findByNotRenewalPrice(date);
         Set<PlayerPrice> playerPriceList = new HashSet<>();
-        int totalCount = Math.min(notRenewalPlayers.size(), ONCE_CREATE_PLAYER_PRICE_COUNT);
+        //int totalCount = Math.min(notRenewalPlayers.size(), ONCE_CREATE_PLAYER_PRICE_COUNT);
+        int totalCount = notRenewalPlayers.size();
         long startTime = System.currentTimeMillis();
 
         try {
-            for (int i = 0; i < notRenewalPlayers.subList(0, totalCount).size(); i++) {
-                long playerId = notRenewalPlayers.subList(0, totalCount).get(i);
+            for (int i = 0; i < notRenewalPlayers.size(); i++) {
+                long playerId = notRenewalPlayers.get(i);
                 //for (Long playerId : notRenewalPlayers.subList(0, totalCount)) {
                 for (int j = 1; j <= MAX_UPGRADE_VALUE; j++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
@@ -250,7 +251,7 @@ public class BatchService {
 
             log.info("JSOUP 파싱 시간: {}s", (jsoupParseEndTime - startTime) / 1000);
             log.info("{} 일자, {}건 시세 생성, 소요 시간 : {}s", date, totalCount, (System.currentTimeMillis() - startTime) / 1000);
-            log.info("남은 건수 {}건", Math.max(notRenewalPlayers.size() - ONCE_CREATE_PLAYER_PRICE_COUNT, 0));
+            //log.info("남은 건수 {}건", Math.max(notRenewalPlayers.size() - ONCE_CREATE_PLAYER_PRICE_COUNT, 0));
         }
     }
 
@@ -477,7 +478,7 @@ public class BatchService {
         } catch (Exception e) {
             log.error("선수 시세 적용 실패 {1} : {}.", player.getId(), e);
         }
-       
+
         return playerPriceList;
     }
 
