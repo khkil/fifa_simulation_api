@@ -47,7 +47,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
 
         Predicate[] whereConditions = new Predicate[]{
-                season.id.ne(110L), // 교불 아이콘 제외
+                //season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),
@@ -68,7 +68,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .groupBy(player.id)
-                .orderBy(playerPositionAssociation.overall.avg().desc())
+                //.orderBy(playerPositionAssociation.overall.avg().desc())
                 .where(whereConditions)
                 .fetch();
 
@@ -146,13 +146,15 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                         playerPositionAssociation.overall
                                 ))
                         ))
-                ).stream().sorted((a, b) -> {
+                )
+        /*        .stream().sorted((a, b) -> {
                     double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
                     double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
                     return (int) (avg2 - avg1);
-                }).toList());
+                }).toList()*/
+        );
 
-        /*List<String> playerNames = players.stream().map(PlayerListDto::getPlayerName).toList();
+ /*       List<String> playerNames = players.stream().map(PlayerListDto::getPlayerName).distinct().toList();
         players.sort(Comparator.comparingInt(a -> playerNames.indexOf(a.getPlayerName())));*/
 
         return new PageImpl<>(players, pageable, count);
