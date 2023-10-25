@@ -44,7 +44,6 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     @Override
     public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
 
-
         Predicate[] whereConditions = new Predicate[]{
                 //season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
@@ -56,12 +55,12 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
         List<Long> playerIds = jpaQueryFactory
                 .select(player.id)
-                .from(player)
+                .from(playerPositionAssociation)
+                .leftJoin(playerPositionAssociation.player, player)
                 .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
                 .leftJoin(playerSkillAssociation.skill, skill)
                 .leftJoin(player.playerClubAssociations, playerClubAssociation)
                 .leftJoin(playerClubAssociation.club, club)
-                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
                 .leftJoin(player.season, season)
                 .leftJoin(player.nation, nation)
                 .offset(pageable.getOffset())
@@ -70,7 +69,6 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .orderBy(playerPositionAssociation.overall.avg().desc())
                 .where(whereConditions)
                 .fetch();
-
 
         int count = jpaQueryFactory
                 .select(player.count())
@@ -86,7 +84,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .fetch()
                 .size();
 
-        Map<Long, LocalDate> recentDatemap = jpaQueryFactory
+        Map<Long, LocalDate> lastDatePriceMap = jpaQueryFactory
                 .selectFrom(playerPrice)
                 .join(playerPrice.player, player)
                 .where(player.id.in(playerIds))
@@ -97,10 +95,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         BooleanBuilder conditions = new BooleanBuilder();
 
         for (long playerId : playerIds) {
-            if (recentDatemap.get(playerId) != null) {
+            if (lastDatePriceMap.get(playerId) != null) {
                 conditions.or(
                         player.id.eq(playerId)
-                                .and(playerPrice.date.eq(recentDatemap.get(playerId)))
+                                .and(playerPrice.date.eq(lastDatePriceMap.get(playerId)))
                 );
             }
         }
@@ -144,11 +142,11 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                         ))
                 );
 
-        players.sort((a, b) -> {
+       /* players.sort((a, b) -> {
             double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
             double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
             return (int) (avg2 - avg1);
-        });
+        });*/
 
         return new PageImpl<>(players, pageable, count);
     }
