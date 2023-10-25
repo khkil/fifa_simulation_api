@@ -1,6 +1,7 @@
 package com.simulation.fifa.api.player.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -24,6 +25,7 @@ import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.querydsl.core.group.GroupBy.*;
 import static com.simulation.fifa.api.associations.entity.QPlayerClubAssociation.playerClubAssociation;
@@ -45,7 +47,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     public Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto) {
 
         Predicate[] whereConditions = new Predicate[]{
-                //season.id.ne(110L), // 교불 아이콘 제외
+                season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
                 clubIdsIn(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),
@@ -54,7 +56,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         };
 
         List<Long> playerIds = jpaQueryFactory
-                .select(player.id)
+                .select(playerPositionAssociation.player.id)
                 .from(playerPositionAssociation)
                 .leftJoin(playerPositionAssociation.player, player)
                 .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
@@ -70,6 +72,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .where(whereConditions)
                 .fetch();
 
+        if (playerIds.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, 0);
+        }
+
         int count = jpaQueryFactory
                 .select(player.count())
                 .from(player)
@@ -84,7 +90,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .fetch()
                 .size();
 
-        Map<Long, LocalDate> lastDatePriceMap = jpaQueryFactory
+        Map<Long, LocalDate> recentDatemap = jpaQueryFactory
                 .selectFrom(playerPrice)
                 .join(playerPrice.player, player)
                 .where(player.id.in(playerIds))
@@ -95,15 +101,15 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         BooleanBuilder conditions = new BooleanBuilder();
 
         for (long playerId : playerIds) {
-            if (lastDatePriceMap.get(playerId) != null) {
+            if (recentDatemap.get(playerId) != null) {
                 conditions.or(
                         player.id.eq(playerId)
-                                .and(playerPrice.date.eq(lastDatePriceMap.get(playerId)))
+                                .and(playerPrice.date.eq(recentDatemap.get(playerId)))
                 );
             }
         }
 
-        List<PlayerListDto> players = jpaQueryFactory
+        List<PlayerListDto> players = new ArrayList<>(jpaQueryFactory
                 .selectFrom(player)
                 .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
                 .leftJoin(playerPositionAssociation.position, position)
@@ -140,13 +146,14 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                         playerPositionAssociation.overall
                                 ))
                         ))
-                );
+                ).stream().sorted((a, b) -> {
+                    double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
+                    double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
+                    return (int) (avg2 - avg1);
+                }).toList());
 
-       /* players.sort((a, b) -> {
-            double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
-            double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
-            return (int) (avg2 - avg1);
-        });*/
+        /*List<String> playerNames = players.stream().map(PlayerListDto::getPlayerName).toList();
+        players.sort(Comparator.comparingInt(a -> playerNames.indexOf(a.getPlayerName())));*/
 
         return new PageImpl<>(players, pageable, count);
     }
