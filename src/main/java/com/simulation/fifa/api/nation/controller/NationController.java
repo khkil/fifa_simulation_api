@@ -6,6 +6,7 @@ import com.simulation.fifa.api.nation.service.NationService;
 import com.simulation.fifa.api.player.PlayerService;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,9 +20,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/nations")
+@RequiredArgsConstructor
 public class NationController {
-    @Autowired
-    NationService nationService;
+    private final NationService nationService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> findAll(Pageable pageable, PlayerSearchDto playerSearchDto) {

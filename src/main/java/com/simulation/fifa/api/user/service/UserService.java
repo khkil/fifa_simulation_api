@@ -16,6 +16,7 @@ import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
 import com.simulation.fifa.api.user.dto.match.*;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserService {
     @Value("${nexon.fifa-online.public-api-url}")
     private String publicApiUrl;
@@ -40,16 +42,11 @@ public class UserService {
     @Value("${nexon.fifa-online.api-key}")
     private String apiKey;
 
-    @Autowired
-    WebClient webClient;
-    @Autowired
-    PlayerRepository playerRepository;
-    @Autowired
-    PlayerPriceRepository playerPriceRepository;
-    @Autowired
-    PositionRepository positionRepository;
-    @Autowired
-    BatchService batchService;
+    private final WebClient webClient;
+    private final PlayerRepository playerRepository;
+    private final PlayerPriceRepository playerPriceRepository;
+    private final PositionRepository positionRepository;
+    private final BatchService batchService;
 
     public UserDto findUserInfo(String nickname) {
         UserDto user = getUserInfo(nickname);

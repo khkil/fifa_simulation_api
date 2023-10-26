@@ -6,9 +6,6 @@ import com.google.gson.JsonParser;
 import com.simulation.fifa.api.associations.entity.PlayerClubAssociation;
 import com.simulation.fifa.api.associations.entity.PlayerPositionAssociation;
 import com.simulation.fifa.api.associations.entity.PlayerSkillAssociation;
-import com.simulation.fifa.api.associations.repository.PlayerClubAssociationRepository;
-import com.simulation.fifa.api.associations.repository.PlayerPositionAssociationRepository;
-import com.simulation.fifa.api.associations.repository.PlayerSkillAssociationRepository;
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.SeasonIdDto;
 import com.simulation.fifa.api.batch.dto.SpIdDto;
@@ -39,7 +36,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -71,30 +67,15 @@ public class BatchService {
     @Value("${nexon.fifa-online.static-api-url}")
     private String staticApiUrl;
 
-    @Autowired
-    WebClient webClient;
-    @Autowired
-    SeasonRepository seasonRepository;
-    @Autowired
-    ClubRepository clubRepository;
-    @Autowired
-    LeagueRepository leagueRepository;
-    @Autowired
-    PlayerRepository playerRepository;
-    @Autowired
-    NationRepository nationRepository;
-    @Autowired
-    PositionRepository positionRepository;
-    @Autowired
-    SkillRepository skillRepository;
-    @Autowired
-    PlayerPositionAssociationRepository playerPositionAssociationRepository;
-    @Autowired
-    PlayerClubAssociationRepository playerClubAssociationRepository;
-    @Autowired
-    PlayerSkillAssociationRepository playerSkillAssociationRepository;
-    @Autowired
-    PlayerPriceRepository playerPriceRepository;
+    private final WebClient webClient;
+    private final SeasonRepository seasonRepository;
+    private final ClubRepository clubRepository;
+    private final LeagueRepository leagueRepository;
+    private final PlayerRepository playerRepository;
+    private final NationRepository nationRepository;
+    private final PositionRepository positionRepository;
+    private final SkillRepository skillRepository;
+    private final PlayerPriceRepository playerPriceRepository;
 
     public void createLeagues() {
         List<League> leagues = new ArrayList<>();

@@ -4,6 +4,7 @@ import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.PriceDateDto;
 import com.simulation.fifa.api.batch.service.BatchService;
 import com.simulation.fifa.api.common.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/batch")
+@RequiredArgsConstructor
 public class BatchController {
-    @Autowired
-    BatchService batchService;
+    private final BatchService batchService;
 
     @PostMapping("/base-informations")
     public ResponseEntity<ApiResponse<?>> createNations() {

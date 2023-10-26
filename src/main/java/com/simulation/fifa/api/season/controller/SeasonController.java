@@ -5,6 +5,7 @@ import com.simulation.fifa.api.season.dto.SeasonListDto;
 import com.simulation.fifa.api.season.service.SeasonService;
 import com.simulation.fifa.api.skill.dto.SkillListDto;
 import com.simulation.fifa.api.skill.service.SkillService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +16,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/seasons")
+@RequiredArgsConstructor
 public class SeasonController {
-    @Autowired
-    SeasonService seasonService;
+    private final SeasonService seasonService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> findALl() {
