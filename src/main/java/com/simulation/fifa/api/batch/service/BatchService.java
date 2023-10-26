@@ -270,7 +270,7 @@ public class BatchService {
                 .filter(v -> !IGNORE_PLAYERS.contains(v.getId()))
                 .toList();
 
-        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size());
+        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size() - IGNORE_PLAYERS.size());
 
         for (SpIdDto spidDto : spIdList.subList(0, createSize)) {
             Long spId = spidDto.getId();
