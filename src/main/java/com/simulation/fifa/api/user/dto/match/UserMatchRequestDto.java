@@ -13,4 +13,5 @@ public class UserMatchRequestDto {
     private Integer matchType;
     private Integer offset;
     private Integer limit;
+    private Integer page;
 }

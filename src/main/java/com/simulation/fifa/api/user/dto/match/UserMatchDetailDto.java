@@ -18,11 +18,13 @@ public class UserMatchDetailDto {
         private String accessId;
         private String nickname;
         private MatchDetail matchDetail;
+        private Shoot shoot;
         private List<Player> player;
 
         @Data
         public static class MatchDetail {
-
+            private String matchResult;
+            private String controller;
         }
 
         @Data
@@ -30,6 +32,11 @@ public class UserMatchDetailDto {
             private Long spId;
             private Long spPosition;
             private Integer spGrade;
+        }
+
+        @Data
+        public static class Shoot {
+            private Integer goalTotal;
         }
     }
 }

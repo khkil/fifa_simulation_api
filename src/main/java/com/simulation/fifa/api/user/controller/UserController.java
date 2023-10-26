@@ -2,13 +2,14 @@ package com.simulation.fifa.api.user.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
 import com.simulation.fifa.api.user.dto.UserDto;
+import com.simulation.fifa.api.user.dto.match.UserMatchDetailDto;
+import com.simulation.fifa.api.user.dto.match.UserMatchListDto;
 import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
 import com.simulation.fifa.api.user.dto.match.UserSquadDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,20 +25,26 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/info")
-    public ResponseEntity<ApiResponse<?>> getUserInfo(@RequestParam String nickname) {
+    public ResponseEntity<ApiResponse<?>> findUserInfo(@RequestParam String nickname) {
         UserDto userInfo = userService.findUserInfo(nickname);
         return ResponseEntity.ok(ApiResponse.createSuccess(userInfo));
     }
 
     @GetMapping("/trades")
-    public ResponseEntity<ApiResponse<?>> getUserTradeInfo(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
-        List<UserTradeListDto> userTradeList = userService.findAllTradeList(nickname, userTradeRequestDto);
+    public ResponseEntity<ApiResponse<?>> findUserTrades(@RequestParam String nickname, UserTradeRequestDto userTradeRequestDto) {
+        List<UserTradeListDto> userTradeList = userService.findUserTrades(nickname, userTradeRequestDto);
         return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
     }
 
     @GetMapping("/squad")
-    public ResponseEntity<ApiResponse<?>> getUserSquad(@RequestParam String nickname) {
-        List<UserSquadDto> userTradeList = userService.searchUserSquad(nickname);
+    public ResponseEntity<ApiResponse<?>> findUserSquad(@RequestParam String nickname) {
+        List<UserSquadDto> userTradeList = userService.findUserSquad(nickname);
         return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
+    }
+
+    @GetMapping("/matches")
+    public ResponseEntity<ApiResponse<?>> findUserMatches(@RequestParam String nickname, UserMatchRequestDto userMatchRequestDto) {
+        List<UserMatchListDto> matchList = userService.findUserMatchList(nickname, userMatchRequestDto);
+        return ResponseEntity.ok(ApiResponse.createSuccess(matchList));
     }
 }

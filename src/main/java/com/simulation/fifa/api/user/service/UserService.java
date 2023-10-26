@@ -1,8 +1,6 @@
 package com.simulation.fifa.api.user.service;
 
-import com.simulation.fifa.api.batch.dto.SeasonIdDto;
 import com.simulation.fifa.api.batch.service.BatchService;
-import com.simulation.fifa.api.nation.entity.Nation;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
@@ -18,7 +16,6 @@ import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
@@ -88,7 +85,7 @@ public class UserService {
         return user;
     }
 
-    public List<UserTradeListDto> findAllTradeList(String nickname, UserTradeRequestDto userTradeRequestDto) {
+    public List<UserTradeListDto> findUserTrades(String nickname, UserTradeRequestDto userTradeRequestDto) {
         UserDto user = getUserInfo(nickname);
 
         List<UserTradeListDto> buyList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
@@ -154,7 +151,7 @@ public class UserService {
         return joinedList;
     }
 
-    public List<UserSquadDto> searchUserSquad(String nickname) {
+    public List<UserSquadDto> findUserSquad(String nickname) {
         UserDto searchedUser = getUserInfo(nickname);
         List<String> matchIds = getUserMatchList(searchedUser.getAccessId(), UserMatchRequestDto
                 .builder()
@@ -219,7 +216,38 @@ public class UserService {
         ).toList();
     }
 
-    public List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
+    public List<UserMatchListDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
+        UserDto user = getUserInfo(nickname);
+
+        List<String> matchIds = getUserMatchList(user.getAccessId(), userMatchRequestDto);
+        return matchIds.stream()
+                .map(matchId -> {
+                    UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
+                    return UserMatchListDto
+                            .builder()
+                            .matchId(matchDetail.getMatchId())
+                            .matchDate(matchDetail.getMatchDate())
+                            .matchType(matchDetail.getMatchType())
+                            .users(matchDetail.getMatchInfo().stream()
+                                    .map(matchInfo -> UserMatchListDto.User
+                                            .builder()
+                                            .accessId(matchInfo.getAccessId())
+                                            .nickname(matchInfo.getNickname())
+                                            .goal(matchInfo.getShoot().getGoalTotal())
+                                            .matchResult(matchInfo.getMatchDetail().getMatchResult())
+                                            .controller(matchInfo.getMatchDetail().getController())
+                                            .build()
+                                    ).toList()
+                            )
+                            .build();
+                })
+                .toList();
+    }
+
+    private List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
+        int page = userMatchRequestDto.getPage();
+        int limit = 10;
+        int offset = (page - 1) * limit;
 
         return webClient
                 .mutate()
@@ -229,8 +257,8 @@ public class UserService {
                 .uri(uriBuilder -> uriBuilder
                         .path("/openapi/fconline/v1.0/users/" + accessId + "/matches")
                         .queryParam("matchtype", userMatchRequestDto.getMatchType())
-                        .queryParam("offset", userMatchRequestDto.getOffset())
-                        .queryParam("limit", userMatchRequestDto.getLimit())
+                        .queryParam("offset", offset)
+                        .queryParam("limit", limit)
                         .build()
                 )
                 .header(HttpHeaders.AUTHORIZATION, apiKey)

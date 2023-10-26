@@ -114,7 +114,7 @@ public class BatchService {
             for (Element el : elements) {
                 long leagueId = parseLeagueId(el);
 
-                if (leagueId == 0) continue;
+                if (leagueId < 1) continue;
 
                 League league = leagueMap.get(leagueId);
                 if (league == null) continue;
