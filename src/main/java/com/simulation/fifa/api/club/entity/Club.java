@@ -1,10 +1,7 @@
 package com.simulation.fifa.api.club.entity;
 
 import com.simulation.fifa.api.league.entity.League;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +16,7 @@ public class Club {
     @Id
     private Long id;
 
+    @Column(unique = true)
     private String clubName;
 
     @ManyToOne

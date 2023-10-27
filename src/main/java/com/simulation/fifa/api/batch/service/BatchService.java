@@ -78,6 +78,7 @@ public class BatchService {
     private final PlayerPriceRepository playerPriceRepository;
 
     public void createLeagues() {
+        Set<Long> leagueIds = leagueRepository.findAll().stream().map(League::getId).collect(Collectors.toSet());
         List<League> leagues = new ArrayList<>();
         try {
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
@@ -85,7 +86,7 @@ public class BatchService {
             for (Element el : elements) {
                 long leagueId = parseLeagueId(el);
                 // 리그 0(해당없음) or -1(리그가 없거나 파싱오류 발생) 일 경우 skip
-                if (leagueId <= 0) continue;
+                if (leagueId <= 0 || leagueIds.contains(leagueId)) continue;
 
                 String leagueName = el.getElementsByTag("span").html();
                 League league = League
@@ -105,6 +106,7 @@ public class BatchService {
 
     public void createClubs() {
 
+        Set<Long> clubIds = clubRepository.findAll().stream().map(Club::getId).collect(Collectors.toSet());
         List<Club> clubs = new ArrayList<>();
         Map<Long, League> leagueMap = leagueRepository.findAll().stream().collect(Collectors.toMap(League::getId, league -> league));
 
@@ -117,9 +119,9 @@ public class BatchService {
                 if (leagueId < 1) continue;
 
                 League league = leagueMap.get(leagueId);
-                if (league == null) continue;
-
                 long clubId = Long.parseLong(RegexUtil.extractNumbers(el.attr("onclick")));
+
+                if (league == null || clubIds.contains(clubId)) continue;
                 String clubName = el.getElementsByTag("span").html();
 
                 Club club = Club
@@ -140,12 +142,13 @@ public class BatchService {
     }
 
     public void createNations() {
+        Set<String> nationNames = nationRepository.findAll().stream().map(Nation::getNationName).collect(Collectors.toSet());
         List<Nation> nations = new ArrayList<>();
         try {
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
             nations = document.getElementsByClass("nationality_list").get(0).getElementsByTag("span").stream()
                     .map(Element::html)
-                    .filter(v -> !v.equals("국적"))
+                    .filter(nationName -> !nationName.equals("국적") && !nationNames.contains(nationName))
                     .collect(Collectors.toSet())
                     .stream().map(nation -> Nation
                             .builder()
@@ -162,17 +165,23 @@ public class BatchService {
     }
 
     public void createPositions() {
-        List<Position> positions = getPositions().stream().map(p -> p.toEntity(p)).toList();
+        Set<Long> positionIds = positionRepository.findAll().stream().map(Position::getId).collect(Collectors.toSet());
+        List<Position> positions = getPositions()
+                .stream()
+                .map(p -> p.toEntity(p))
+                .filter(v -> !positionIds.contains(v.getId()))
+                .toList();
         positionRepository.saveAll(positions);
     }
 
     public void createSkills() {
+        Set<String> skillNames = skillRepository.findAll().stream().map(Skill::getSkillName).collect(Collectors.toSet());
         List<Skill> skills = new ArrayList<>();
         try {
             Document document = Jsoup.connect(siteUrl + "/datacenter").get();
             skills = document.getElementsByClass("search_po_ab").get(0).getElementsByTag("span").stream()
                     .map(Element::html)
-                    .filter(v -> !v.equals("보유 특성1"))
+                    .filter(skillName -> !skillName.equals("보유 특성1") && !skillNames.contains(skillName))
                     .collect(Collectors.toSet())
                     .stream().map(skill -> Skill
                             .builder()
@@ -189,7 +198,12 @@ public class BatchService {
     }
 
     public void createSeasons() {
-        List<Season> seasons = getSeasonIdList().stream().map(v -> v.toEntity(v)).toList();
+        List<Long> seasonIds = seasonRepository.findAll().stream().map(Season::getId).toList();
+        List<Season> seasons = getSeasonIdList()
+                .stream()
+                .map(v -> v.toEntity(v))
+                .filter(v -> !seasonIds.contains(v.getId()))
+                .toList();
         seasonRepository.saveAll(seasons);
     }
 
@@ -424,11 +438,14 @@ public class BatchService {
 
                     LocalDateTime nowDateTime = LocalDateTime.now();
 
-                    for (int y = timeList.size() - KEEP_DAYS; y < timeList.size(); y++) {
+                    int startIndex = Math.max(timeList.size() - KEEP_DAYS, 0);
+
+                    for (int y = startIndex; y < timeList.size(); y++) {
                         String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
                         String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
 
                         if (timeStr.isEmpty() || timeStr.equals("null") || priceStr.isEmpty() || priceStr.equals("null")) continue;
+
                         int month = Integer.parseInt(timeStr.split("\\.")[0]);
                         int day = Integer.parseInt(timeStr.split("\\.")[1]);
 
@@ -455,9 +472,9 @@ public class BatchService {
                 }
             }
         } catch (IOException e) {
-            log.error("선수 시세 적용 Jsoup 파싱 실패 {0}", e);
+            log.error("선수 시세 적용 Jsoup 파싱 실패 {} {0}", player.getId(), e);
         } catch (Exception e) {
-            log.error("선수 시세 적용 실패 {1} : {}.", player.getId(), e);
+            log.error("선수 시세 적용 실패 {} : {0}.", player.getId(), e);
         }
 
         return playerPriceList;

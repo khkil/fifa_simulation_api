@@ -14,4 +14,9 @@ public class UserMatchRequestDto {
     private Integer offset;
     private Integer limit;
     private Integer page;
+
+    public UserMatchRequestDto(Integer offset, Integer limit) {
+        this.offset = offset;
+        this.limit = limit;
+    }
 }

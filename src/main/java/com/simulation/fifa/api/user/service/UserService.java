@@ -219,7 +219,17 @@ public class UserService {
     public List<UserMatchListDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
         UserDto user = getUserInfo(nickname);
 
-        List<String> matchIds = getUserMatchList(user.getAccessId(), userMatchRequestDto);
+        int page = userMatchRequestDto.getPage();
+        int limit = 10;
+        int offset = (page - 1) * limit;
+
+        List<String> matchIds = getUserMatchList(user.getAccessId(), UserMatchRequestDto
+                .builder()
+                .matchType(userMatchRequestDto.getMatchType())
+                .offset(offset)
+                .limit(limit)
+                .build()
+        );
         return matchIds.stream()
                 .map(matchId -> {
                     UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
@@ -245,10 +255,6 @@ public class UserService {
     }
 
     private List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
-        int page = userMatchRequestDto.getPage();
-        int limit = 10;
-        int offset = (page - 1) * limit;
-
         return webClient
                 .mutate()
                 .baseUrl(publicApiUrl)
@@ -257,8 +263,8 @@ public class UserService {
                 .uri(uriBuilder -> uriBuilder
                         .path("/openapi/fconline/v1.0/users/" + accessId + "/matches")
                         .queryParam("matchtype", userMatchRequestDto.getMatchType())
-                        .queryParam("offset", offset)
-                        .queryParam("limit", limit)
+                        .queryParam("offset", userMatchRequestDto.getOffset())
+                        .queryParam("limit", userMatchRequestDto.getLimit())
                         .build()
                 )
                 .header(HttpHeaders.AUTHORIZATION, apiKey)
