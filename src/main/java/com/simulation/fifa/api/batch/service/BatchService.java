@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 5000; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 4000; // 선수 배치 저장시 한번에 저장될 갯수
     public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 6000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
     private final List<Long> IGNORE_PLAYERS = List.of(
             //사이트 금액 데이터 오류
@@ -76,6 +76,16 @@ public class BatchService {
     private final PositionRepository positionRepository;
     private final SkillRepository skillRepository;
     private final PlayerPriceRepository playerPriceRepository;
+
+    public void test() {
+        Player player1 = Player.builder().id(9999991L).name("test1").build();
+        Player player2 = Player.builder().id(9999992L).name("test2").build();
+
+        List<Player> players = List.of(player1, player2);
+        playerRepository.saveAll(players);
+
+        playerRepository.deleteAll(players);
+    }
 
     public void createLeagues() {
         Set<Long> leagueIds = leagueRepository.findAll().stream().map(League::getId).collect(Collectors.toSet());
@@ -296,6 +306,7 @@ public class BatchService {
 
                 PlayerBatchDto playerInfo = new PlayerBatchDto(spidDto.getId(), spidDto.getName());
 
+                Elements e = document.getElementsByClass("etc foot");
                 // 선수 주발, 약발 설정
                 String[] foots = document.getElementsByClass("etc foot").get(0).html().split("–");
                 for (String foot : foots) {
@@ -389,7 +400,7 @@ public class BatchService {
             } catch (IOException e) {
                 log.error("선수 생성 Jsoup 파싱 실패 {0}", e);
             } catch (Exception e) {
-                log.error("선수 생성 오류 {0}", e);
+                log.error("선수 생성 오류 {1}", e);
             }
         }
 
@@ -407,6 +418,8 @@ public class BatchService {
 
     private Set<PlayerPrice> makePriceHistories(Player player) {
         Set<PlayerPrice> playerPriceList = new HashSet<>();
+        LocalDateTime nowDateTime = LocalDateTime.now();
+
         try {
             for (int i = 1; i <= MAX_UPGRADE_VALUE; i++) {
                 Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
@@ -421,7 +434,7 @@ public class BatchService {
                         .price(nowPrice)
                         .grade(i)
                         .date(LocalDate.now())
-                        .createAt(LocalDateTime.now())
+                        .createAt(nowDateTime)
                         .build();
                 playerPriceList.add(nowPlayerPrice);
 
@@ -436,10 +449,9 @@ public class BatchService {
                     JsonArray timeList = priceJson.getAsJsonArray("time");
                     JsonArray priceList = priceJson.getAsJsonArray("value");
 
-                    LocalDateTime nowDateTime = LocalDateTime.now();
 
                     int startIndex = Math.max(timeList.size() - KEEP_DAYS, 0);
-
+                    int idx = 1;
                     for (int y = startIndex; y < timeList.size(); y++) {
                         String timeStr = String.valueOf(timeList.get(y)).replace("\"", "");
                         String priceStr = String.valueOf(priceList.get(y)).replace("\"", "");
@@ -449,7 +461,8 @@ public class BatchService {
                         int month = Integer.parseInt(timeStr.split("\\.")[0]);
                         int day = Integer.parseInt(timeStr.split("\\.")[1]);
 
-                        LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
+                        //LocalDate date = LocalDate.of(LocalDate.now().getYear(), month, day);
+                        LocalDate date = LocalDate.now().minusDays(idx++);
                         long price = Long.parseLong(RegexUtil.extractNumbers(priceStr));
 
                         if (date.isAfter(LocalDate.now()) || date.isEqual(LocalDate.now())) {

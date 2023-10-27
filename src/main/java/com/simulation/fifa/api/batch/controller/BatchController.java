@@ -19,6 +19,12 @@ import java.util.Map;
 public class BatchController {
     private final BatchService batchService;
 
+    @PostMapping("/test")
+    public ResponseEntity<ApiResponse<?>> test() {
+        batchService.test();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("bulk test 성공"));
+    }
+
     @PostMapping("/base-informations")
     public ResponseEntity<ApiResponse<?>> createNations() {
         batchService.createLeagues();
