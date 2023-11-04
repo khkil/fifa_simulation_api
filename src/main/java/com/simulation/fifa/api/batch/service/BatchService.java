@@ -84,7 +84,9 @@ public class BatchService {
         List<Player> players = List.of(player1, player2);
         playerRepository.saveAll(players);
 
-        playerRepository.deleteAll(players);
+        List<Player> testPlayers = playerRepository.findAllByIdIn(players.stream().map(Player::getId).toList());
+
+        playerRepository.deleteAll(testPlayers);
     }
 
     public void createLeagues() {
