@@ -54,13 +54,8 @@ import java.util.stream.Collectors;
 public class BatchService {
     public final int MAX_UPGRADE_VALUE = 10; // 선수 +10 단계 까지 저장
     public final int KEEP_DAYS = 30; //30일 동안의 가격 데이터 만 저장
-    public final int ONCE_CREATE_PLAYER_COUNT = 4000; // 선수 배치 저장시 한번에 저장될 갯수
+    public final int ONCE_CREATE_PLAYER_COUNT = 100; // 선수 배치 저장시 한번에 저장될 갯수
     public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 6000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
-    private final List<Long> IGNORE_PLAYERS = List.of(
-            //사이트 금액 데이터 오류
-            300163155L,
-            300167926L
-    );
 
     @Value("${nexon.fifa-online.site-url}")
     private String siteUrl;
@@ -89,6 +84,7 @@ public class BatchService {
         playerRepository.deleteAll(testPlayers);
     }
 
+    @Transactional
     public void createLeagues() {
         Set<Long> leagueIds = leagueRepository.findAll().stream().map(League::getId).collect(Collectors.toSet());
         List<League> leagues = new ArrayList<>();
@@ -116,6 +112,7 @@ public class BatchService {
         }
     }
 
+    @Transactional
     public void createClubs() {
 
         Set<Long> clubIds = clubRepository.findAll().stream().map(Club::getId).collect(Collectors.toSet());
@@ -153,6 +150,7 @@ public class BatchService {
         }
     }
 
+    @Transactional
     public void createNations() {
         Set<String> nationNames = nationRepository.findAll().stream().map(Nation::getNationName).collect(Collectors.toSet());
         List<Nation> nations = new ArrayList<>();
@@ -176,6 +174,7 @@ public class BatchService {
         }
     }
 
+    @Transactional
     public void createPositions() {
         Set<Long> positionIds = positionRepository.findAll().stream().map(Position::getId).collect(Collectors.toSet());
         List<Position> positions = getPositions()
@@ -186,6 +185,7 @@ public class BatchService {
         positionRepository.saveAll(positions);
     }
 
+    @Transactional
     public void createSkills() {
         Set<String> skillNames = skillRepository.findAll().stream().map(Skill::getSkillName).collect(Collectors.toSet());
         List<Skill> skills = new ArrayList<>();
@@ -209,6 +209,7 @@ public class BatchService {
         }
     }
 
+    @Transactional
     public void createSeasons() {
         List<Long> seasonIds = seasonRepository.findAll().stream().map(Season::getId).toList();
         List<Season> seasons = getSeasonIdList()
@@ -293,16 +294,12 @@ public class BatchService {
 
         List<SpIdDto> spIdList = allSpIdList.stream()
                 .filter(v -> remainPlayers.contains(v.getId()))
-                .filter(v -> !IGNORE_PLAYERS.contains(v.getId()))
                 .toList();
 
-        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size() - IGNORE_PLAYERS.size());
+        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size());
 
         for (SpIdDto spidDto : spIdList.subList(0, createSize)) {
             Long spId = spidDto.getId();
-            Set<PlayerPositionAssociation> playerPositionAssociations;
-            Set<PlayerClubAssociation> playerClubAssociations = new LinkedHashSet<>();
-            Set<PlayerSkillAssociation> playerSkillAssociations = new LinkedHashSet<>();
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
 
@@ -350,7 +347,7 @@ public class BatchService {
                 player.updateSeason(season);
 
                 // 선수 포지션 설정
-                playerPositionAssociations = document.getElementsByClass("info_ab").get(0).getElementsByClass("position")
+                Set<PlayerPositionAssociation> playerPositionAssociations = document.getElementsByClass("info_ab").get(0).getElementsByClass("position")
                         .stream()
                         .map(el -> PlayerPositionAssociation
                                 .builder()
@@ -362,7 +359,7 @@ public class BatchService {
                         .collect(Collectors.toSet());
 
                 // 선수 클럽 설정
-                playerClubAssociations = document.getElementsByClass("data_detail_club").get(0).getElementsByTag("li")
+                Set<PlayerClubAssociation> playerClubAssociations = document.getElementsByClass("data_detail_club").get(0).getElementsByTag("li")
                         .stream()
                         .map(el -> {
                                     String clubName = el.getElementsByClass("club").html();
@@ -380,7 +377,7 @@ public class BatchService {
                         .collect(Collectors.toSet());
 
                 // 선수 스킬 설정
-                playerSkillAssociations = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span")
+                Set<PlayerSkillAssociation> playerSkillAssociations = document.getElementsByClass("skill_wrap").get(0).getElementsByTag("span")
                         .stream()
                         .filter(el -> !el.html().isEmpty())
                         .map(el -> PlayerSkillAssociation

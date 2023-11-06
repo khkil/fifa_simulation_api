@@ -220,7 +220,7 @@ public class UserService {
         UserDto user = getUserInfo(nickname);
 
         int page = userMatchRequestDto.getPage();
-        int limit = 10;
+        int limit = 15;
         int offset = (page - 1) * limit;
 
         List<String> matchIds = getUserMatchList(user.getAccessId(), UserMatchRequestDto
