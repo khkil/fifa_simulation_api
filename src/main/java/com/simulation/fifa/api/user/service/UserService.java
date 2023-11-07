@@ -1,6 +1,9 @@
 package com.simulation.fifa.api.user.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simulation.fifa.api.batch.service.BatchService;
+import com.simulation.fifa.api.league.entity.League;
+import com.simulation.fifa.api.player.dto.SquadDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
@@ -14,8 +17,17 @@ import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
 import com.simulation.fifa.api.user.dto.match.*;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
+import com.simulation.fifa.util.SeleniumUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +49,8 @@ public class UserService {
     private String publicApiUrl;
     @Value("${nexon.fifa-online.static-api-url}")
     private String staticApiUrl;
+    @Value("${nexon.fifa-online.site-url}")
+    private String siteUrl;
     @Value("${nexon.fifa-online.api-key}")
     private String apiKey;
 
@@ -151,7 +166,46 @@ public class UserService {
         return joinedList;
     }
 
+    public SquadDto findUserSquad_new(String nickname) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        WebDriver webDriver = SeleniumUtil.init();
+
+        String userHiddenNo = getHiddenGuestNo(nickname);
+
+        try {
+            webDriver.get("https://fconline.nexon.com/profile/squad/popup/" + userHiddenNo);
+            JavascriptExecutor js = (JavascriptExecutor) webDriver;
+
+            double time = 0;
+            while (true) {
+                Map<String, Object> squadState = objectMapper.convertValue(js.executeScript("return squadState;"), Map.class);
+                List<?> players = objectMapper.convertValue(squadState.get("players"), List.class);
+
+                time += 100;
+
+                if (time == 5000) { // 3초간 쓰레드 대기시 에러 처리
+                    throw new RuntimeException("스쿼드 조회 소요시간 초과");
+                } else if (players.isEmpty()) {
+                    Thread.sleep(100);
+                } else {
+                    break;
+                }
+            }
+
+            log.info("스쿼드 조회 소요시간 {}s", time / 1000);
+
+            Map<String, Object> squadState = objectMapper.convertValue(js.executeScript("return squadState;"), Map.class); // 전체값 디버깅용
+            return objectMapper.convertValue(js.executeScript("return squadState;"), SquadDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("공홈 유저 스쿼드 조회 실패 {}", e);
+        } finally {
+            webDriver.quit();
+        }
+    }
+
     public List<UserSquadDto> findUserSquad(String nickname) {
+
         UserDto searchedUser = getUserInfo(nickname);
         List<String> matchIds = getUserMatchList(searchedUser.getAccessId(), UserMatchRequestDto
                 .builder()
@@ -252,6 +306,18 @@ public class UserService {
                             .build();
                 })
                 .toList();
+    }
+
+    private String getHiddenGuestNo(String nickname) {
+        try {
+            Document document = Jsoup.connect(siteUrl + "/profile/common/PopProfile")
+                    .data("strCharacterName", nickname.trim())
+                    .get();
+            return document.getElementById("hidGuestSN").val();
+
+        } catch (IOException e) {
+            throw new RuntimeException("유저 히든 아이디 조회 실패", e);
+        }
     }
 
     private List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
