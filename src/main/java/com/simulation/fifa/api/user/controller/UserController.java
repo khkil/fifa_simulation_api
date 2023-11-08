@@ -38,12 +38,6 @@ public class UserController {
     }
 
     @GetMapping("/squad")
-    public ResponseEntity<ApiResponse<?>> findUserSquad(@RequestParam String nickname) {
-        List<UserSquadDto> userTradeList = userService.findUserSquad(nickname);
-        return ResponseEntity.ok(ApiResponse.createSuccess(userTradeList));
-    }
-
-    @GetMapping("/squad-new")
     public ResponseEntity<ApiResponse<?>> findUserSquad_new(@RequestParam String nickname) {
         SquadDto squadDto = userService.findUserSquad_new(nickname);
         return ResponseEntity.ok(ApiResponse.createSuccess(squadDto));
