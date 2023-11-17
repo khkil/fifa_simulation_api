@@ -2,6 +2,7 @@ package com.simulation.fifa.api.player.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
 import com.simulation.fifa.api.player.PlayerService;
+import com.simulation.fifa.api.player.dto.PlayerDetailDto;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,8 @@ public class PlayerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity findById(@PathVariable Long id) {
-        return ResponseEntity.ok(playerService.findById(id));
+    public ResponseEntity<ApiResponse<?>> findById(@PathVariable Long id) {
+        PlayerDetailDto playerDetail = playerService.findById(id);
+        return ResponseEntity.ok(ApiResponse.createSuccess(playerDetail));
     }
 }

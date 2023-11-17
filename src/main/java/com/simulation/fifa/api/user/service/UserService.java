@@ -2,7 +2,6 @@ package com.simulation.fifa.api.user.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simulation.fifa.api.batch.service.BatchService;
-import com.simulation.fifa.api.league.entity.League;
 import com.simulation.fifa.api.player.dto.SquadDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
@@ -15,6 +14,7 @@ import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.user.dto.UserDto;
 import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
 import com.simulation.fifa.api.user.dto.match.*;
+import com.simulation.fifa.api.user.dto.squad.UserSquadDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.util.SeleniumUtil;
@@ -22,12 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +33,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -183,7 +180,7 @@ public class UserService {
 
                 time += 100;
 
-                if (time == 5000) { // 3초간 쓰레드 대기시 에러 처리
+                if (time == 5000) { // 5초간 쓰레드 대기시 에러 처리
                     throw new RuntimeException("스쿼드 조회 소요시간 초과");
                 } else if (players.isEmpty()) {
                     Thread.sleep(100);
@@ -195,7 +192,15 @@ public class UserService {
             log.info("스쿼드 조회 소요시간 {}s", time / 1000);
 
             Map<String, Object> squadState = objectMapper.convertValue(js.executeScript("return squadState;"), Map.class); // 전체값 디버깅용
-            return objectMapper.convertValue(js.executeScript("return squadState;"), SquadDto.class);
+            SquadDto squad = objectMapper.convertValue(js.executeScript("return squadState;"), SquadDto.class);
+
+            LocalDate start = LocalDate.now().minusDays(BatchService.KEEP_DAYS);
+            LocalDate end = LocalDate.now().minusDays(1);
+            List<SquadDto.TotalPrice> priceList = playerPriceRepository.findPlayerPriceByIdsAndDateBetween(squad.getPlayers(), start, end);
+
+            squad.updateTotalPrice(priceList);
+
+            return squad;
 
         } catch (Exception e) {
             throw new RuntimeException("공홈 유저 스쿼드 조회 실패 {}", e);

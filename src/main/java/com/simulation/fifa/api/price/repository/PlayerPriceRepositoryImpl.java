@@ -2,6 +2,8 @@ package com.simulation.fifa.api.price.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.simulation.fifa.api.player.dto.QSquadDto_TotalPrice;
+import com.simulation.fifa.api.player.dto.SquadDto;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
 import com.simulation.fifa.api.price.dto.QPlayerRecentPriceDto;
 import lombok.RequiredArgsConstructor;
@@ -77,5 +79,26 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .delete(playerPrice)
                 .where(playerPrice.date.loe(previousDate))
                 .execute();
+    }
+
+    @Override
+    public List<SquadDto.TotalPrice> findPlayerPriceByIdsAndDateBetween(List<SquadDto.Player> players, LocalDate start, LocalDate end) {
+        BooleanBuilder playerGradeConditions = new BooleanBuilder();
+        players.forEach(p -> playerGradeConditions.or(
+                player.id.eq(p.getSpid()).and(playerPrice.grade.eq(p.getBuildUp()))
+        ));
+
+        return jpaQueryFactory
+                .select(new QSquadDto_TotalPrice(
+                        playerPrice.price.sum(),
+                        playerPrice.date
+                ))
+                .from(playerPrice)
+                .join(playerPrice.player, player)
+                .where(playerPrice.date.between(start, end), playerGradeConditions)
+                .groupBy(playerPrice.date)
+                .orderBy(playerPrice.date.desc())
+                .fetch();
+
     }
 }

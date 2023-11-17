@@ -1,9 +1,10 @@
 package com.simulation.fifa.api.player.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.querydsl.core.annotations.QueryProjection;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -15,12 +16,13 @@ public class SquadDto {
     private String maintotalPrice;
     private Map<String, Integer> ovr;
     private List<Player> players;
+    private List<TotalPrice> totalPriceList;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Player {
-        private String spid;
-        private String pid;
+        private long spid;
+        private long pid;
         private String name;
         private String role;
         private int ovr;
@@ -31,4 +33,21 @@ public class SquadDto {
         private double x;
         private double y;
     }
+
+    @Data
+    public static class TotalPrice {
+        private long totalPrice;
+        private LocalDate date;
+
+        @QueryProjection
+        public TotalPrice(long totalPrice, LocalDate date) {
+            this.totalPrice = totalPrice;
+            this.date = date;
+        }
+    }
+
+    public void updateTotalPrice(List<TotalPrice> totalPriceList) {
+        this.totalPriceList = totalPriceList;
+    }
+
 }

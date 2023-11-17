@@ -10,12 +10,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class PlayerService {
     private final PlayerRepository playerRepository;
 
+    @Transactional(readOnly = true)
     public Page<PlayerListDto> findAll(Pageable pageable, PlayerSearchDto playerSearchDto) {
         return playerRepository.findAllCustom(pageable, playerSearchDto);
     }

@@ -2,11 +2,10 @@ package com.simulation.fifa.api.user.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
 import com.simulation.fifa.api.player.dto.SquadDto;
+import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
 import com.simulation.fifa.api.user.dto.UserDto;
-import com.simulation.fifa.api.user.dto.match.UserMatchDetailDto;
 import com.simulation.fifa.api.user.dto.match.UserMatchListDto;
 import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
-import com.simulation.fifa.api.user.dto.match.UserSquadDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.api.user.service.UserService;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -40,6 +40,7 @@ public class UserController {
     @GetMapping("/squad")
     public ResponseEntity<ApiResponse<?>> findUserSquad_new(@RequestParam String nickname) {
         SquadDto squadDto = userService.findUserSquad_new(nickname);
+
         return ResponseEntity.ok(ApiResponse.createSuccess(squadDto));
     }
 
