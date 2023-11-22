@@ -2,7 +2,7 @@ package com.simulation.fifa.api.user.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simulation.fifa.api.batch.service.BatchService;
-import com.simulation.fifa.api.player.dto.SquadDto;
+import com.simulation.fifa.api.user.dto.squad.SquadDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
@@ -243,7 +243,7 @@ public class UserService {
 
         List<Player> players = playerRepository.findAllByIdIn(spIds);
 
-        if (players.size() < matchPlayers.size()) {
+        /*if (players.size() < matchPlayers.size()) {
             List<Player> finalPlayers = players;
             Set<Long> missedPlayers = matchPlayers.stream()
                     .map(UserMatchDetailDto.MatchInfo.Player::getSpId)
@@ -253,7 +253,7 @@ public class UserService {
             batchService.createPlayers(missedPlayers);
 
             players = playerRepository.findAllByIdIn(spIds);
-        }
+        }*/
 
         Map<Long, Player> playerMap = players.stream().collect(Collectors.toMap(Player::getId, p -> p));
         Map<Long, Long> priceMap = playerPriceRepository.findRecentPriceList(spIds, grades).stream().collect(Collectors.toMap(PlayerRecentPriceDto::getPlayerId, PlayerRecentPriceDto::getPrice));
@@ -275,7 +275,7 @@ public class UserService {
         ).toList();
     }
 
-    public List<UserMatchListDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
+    public List<UserMatchDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
         UserDto user = getUserInfo(nickname);
 
         int page = userMatchRequestDto.getPage();
@@ -292,13 +292,13 @@ public class UserService {
         return matchIds.stream()
                 .map(matchId -> {
                     UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
-                    return UserMatchListDto
+                    return UserMatchDto
                             .builder()
                             .matchId(matchDetail.getMatchId())
                             .matchDate(matchDetail.getMatchDate())
                             .matchType(matchDetail.getMatchType())
                             .users(matchDetail.getMatchInfo().stream()
-                                    .map(matchInfo -> UserMatchListDto.User
+                                    .map(matchInfo -> UserMatchDto.User
                                             .builder()
                                             .accessId(matchInfo.getAccessId())
                                             .nickname(matchInfo.getNickname())
@@ -311,6 +311,36 @@ public class UserService {
                             .build();
                 })
                 .toList();
+    }
+
+    public UserMatchDetailDto findUserMatchByMatchId(String matchId) {
+        UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
+        Map<Long, String> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getId, Position::getPositionName));
+
+        for (UserMatchDetailDto.MatchInfo matchInfo : matchDetail.getMatchInfo()) {
+            List<UserMatchDetailDto.MatchInfo.Player> players = matchInfo.getPlayer();
+            List<Long> spIdList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpId).toList();
+            List<Integer> gradeList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpGrade).toList();
+
+            if (!players.isEmpty()) {
+                List<PlayerRecentPriceDto> priceList = playerPriceRepository.findRecentPriceList(spIdList, gradeList);
+
+                players.forEach(p -> {
+                    p.setPositionName(positionMap.get(p.getSpPosition()));
+
+                    priceList.stream()
+                            .filter(price ->
+                                    price.getPlayerId().equals(p.getSpId()) && price.getGrade().equals(p.getSpGrade())
+                            ).findAny().ifPresentOrElse(v -> {
+                                        p.setPrice(v.getPrice());
+                                        p.setName(v.getPlayerName());
+                                        p.setSeasonId(v.getSeasonId());
+                                    }, () -> log.error("선수 가격이 존재하지 않습니다 {}", p.getSpId())
+                            );
+                });
+            }
+        }
+        return matchDetail;
     }
 
     private String getHiddenGuestNo(String nickname) {

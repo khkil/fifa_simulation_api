@@ -2,10 +2,11 @@ package com.simulation.fifa.api.price.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.simulation.fifa.api.player.dto.QSquadDto_TotalPrice;
-import com.simulation.fifa.api.player.dto.SquadDto;
+import com.simulation.fifa.api.user.dto.squad.QSquadDto_TotalPrice;
+import com.simulation.fifa.api.user.dto.squad.SquadDto;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
 import com.simulation.fifa.api.price.dto.QPlayerRecentPriceDto;
+
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.max;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
+import static com.simulation.fifa.api.season.entity.QSeason.season;
 
 @RequiredArgsConstructor
 public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
@@ -47,11 +49,14 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         return jpaQueryFactory
                 .select(new QPlayerRecentPriceDto(
                         player.id,
+                        player.name,
+                        season.id,
                         playerPrice.price,
                         playerPrice.grade
                 ))
                 .from(playerPrice)
                 .join(playerPrice.player, player)
+                .join(player.season, season)
                 .where(conditions)
                 .fetch();
     }

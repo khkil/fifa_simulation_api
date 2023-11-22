@@ -1,6 +1,6 @@
 package com.simulation.fifa.api.price.repository;
 
-import com.simulation.fifa.api.player.dto.SquadDto;
+import com.simulation.fifa.api.user.dto.squad.SquadDto;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
 
 import java.time.LocalDate;

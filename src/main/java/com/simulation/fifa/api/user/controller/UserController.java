@@ -1,22 +1,18 @@
 package com.simulation.fifa.api.user.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
-import com.simulation.fifa.api.player.dto.SquadDto;
-import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
+import com.simulation.fifa.api.user.dto.squad.SquadDto;
 import com.simulation.fifa.api.user.dto.UserDto;
-import com.simulation.fifa.api.user.dto.match.UserMatchListDto;
+import com.simulation.fifa.api.user.dto.match.UserMatchDetailDto;
+import com.simulation.fifa.api.user.dto.match.UserMatchDto;
 import com.simulation.fifa.api.user.dto.match.UserMatchRequestDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -46,7 +42,14 @@ public class UserController {
 
     @GetMapping("/matches")
     public ResponseEntity<ApiResponse<?>> findUserMatches(@RequestParam String nickname, UserMatchRequestDto userMatchRequestDto) {
-        List<UserMatchListDto> matchList = userService.findUserMatchList(nickname, userMatchRequestDto);
+        List<UserMatchDto> matchList = userService.findUserMatchList(nickname, userMatchRequestDto);
         return ResponseEntity.ok(ApiResponse.createSuccess(matchList));
     }
+
+    @GetMapping("/matches/{matchId}")
+    public ResponseEntity<ApiResponse<?>> findUserMatches(@PathVariable String matchId) {
+        UserMatchDetailDto matchList = userService.findUserMatchByMatchId(matchId);
+        return ResponseEntity.ok(ApiResponse.createSuccess(matchList));
+    }
+
 }

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class UserMatchListDto {
+public class UserMatchDto {
     private String matchId;
     private LocalDateTime matchDate;
     private Integer matchType;

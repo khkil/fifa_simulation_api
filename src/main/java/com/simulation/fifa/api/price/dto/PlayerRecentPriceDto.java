@@ -8,12 +8,16 @@ import java.time.LocalDate;
 @Data
 public class PlayerRecentPriceDto {
     private Long playerId;
+    private String playerName;
+    private Long seasonId;
     private Long price;
     private Integer grade;
 
     @QueryProjection
-    public PlayerRecentPriceDto(Long playerId, Long price, Integer grade) {
+    public PlayerRecentPriceDto(Long playerId, String playerName, Long seasonId, Long price, Integer grade) {
         this.playerId = playerId;
+        this.playerName = playerName;
+        this.seasonId = seasonId;
         this.price = price;
         this.grade = grade;
     }
