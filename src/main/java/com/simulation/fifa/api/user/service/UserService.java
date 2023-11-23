@@ -325,19 +325,22 @@ public class UserService {
             if (!players.isEmpty()) {
                 List<PlayerRecentPriceDto> priceList = playerPriceRepository.findRecentPriceList(spIdList, gradeList);
 
-                players.forEach(p -> {
-                    p.setPositionName(positionMap.get(p.getSpPosition()));
+                players.stream()
+                        .sorted((a, b) -> Math.toIntExact(a.getSpPosition() - b.getSpPosition()))
+                        .forEach(p -> {
+                            p.setPositionName(positionMap.get(p.getSpPosition()));
 
-                    priceList.stream()
-                            .filter(price ->
-                                    price.getPlayerId().equals(p.getSpId()) && price.getGrade().equals(p.getSpGrade())
-                            ).findAny().ifPresentOrElse(v -> {
-                                        p.setPrice(v.getPrice());
-                                        p.setName(v.getPlayerName());
-                                        p.setSeasonId(v.getSeasonId());
-                                    }, () -> log.error("선수 가격이 존재하지 않습니다 {}", p.getSpId())
-                            );
-                });
+                            priceList.stream()
+                                    .filter(price ->
+                                            price.getPlayerId().equals(p.getSpId()) && price.getGrade().equals(p.getSpGrade())
+                                    ).findAny().ifPresentOrElse(v -> {
+                                                p.setPrice(v.getPrice());
+                                                p.setName(v.getPlayerName());
+                                                p.setSeasonId(v.getSeasonId());
+                                                p.setSeasonImageUrl(v.getSeasonImageUrl());
+                                            }, () -> log.error("선수 가격이 존재하지 않습니다 {}", p.getSpId())
+                                    );
+                        });
             }
         }
         return matchDetail;

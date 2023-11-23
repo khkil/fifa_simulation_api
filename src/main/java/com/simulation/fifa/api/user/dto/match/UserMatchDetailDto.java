@@ -26,6 +26,7 @@ public class UserMatchDetailDto {
         @Data
         public static class MatchDetail {
             private String matchResult;
+            private int matchEndType;
             private String controller;
             private int possession;
             private int cornerKick;
@@ -41,10 +42,36 @@ public class UserMatchDetailDto {
             private long spId;
             private String name;
             private long seasonId;
+            private String seasonImageUrl;
             private long spPosition;
             private String positionName;
             private int spGrade;
             private long price;
+            private Status status;
+
+            @Data
+            public static class Status {
+                private double spRating;
+                private int goal;
+                private int shoot;
+                private int passTry;
+                private int passSuccess;
+                private int dribbleTry;
+                private int dribbleSuccess;
+                private int aerialTry;
+                private int aerialSuccess;
+                private int blockTry;
+                private int block;
+                private int tackleTry;
+                private int tackle;
+
+                /*private int dribble;
+                private int dribbleSuccess;
+                private int defending;
+                private int passSuccess;
+                private int aerialSuccess;
+                private int tackle;*/
+            }
         }
 
         @Data

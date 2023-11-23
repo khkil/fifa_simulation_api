@@ -10,14 +10,16 @@ public class PlayerRecentPriceDto {
     private Long playerId;
     private String playerName;
     private Long seasonId;
+    private String seasonImageUrl;
     private Long price;
     private Integer grade;
 
     @QueryProjection
-    public PlayerRecentPriceDto(Long playerId, String playerName, Long seasonId, Long price, Integer grade) {
+    public PlayerRecentPriceDto(Long playerId, String playerName, Long seasonId, String seasonImageUrl, Long price, Integer grade) {
         this.playerId = playerId;
         this.playerName = playerName;
         this.seasonId = seasonId;
+        this.seasonImageUrl = seasonImageUrl;
         this.price = price;
         this.grade = grade;
     }

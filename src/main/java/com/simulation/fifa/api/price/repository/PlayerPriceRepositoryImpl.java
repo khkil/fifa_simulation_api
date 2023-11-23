@@ -51,6 +51,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                         player.id,
                         player.name,
                         season.id,
+                        season.imageUrl,
                         playerPrice.price,
                         playerPrice.grade
                 ))
