@@ -318,30 +318,33 @@ public class UserService {
         Map<Long, String> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getId, Position::getPositionName));
 
         for (UserMatchDetailDto.MatchInfo matchInfo : matchDetail.getMatchInfo()) {
-            List<UserMatchDetailDto.MatchInfo.Player> players = matchInfo.getPlayer();
+            List<UserMatchDetailDto.MatchInfo.Player> players = matchInfo.getPlayer()
+                    .stream().filter(v -> v.getSpPosition() != 28).toList() // SUB 포지션 제외
+                    .stream().sorted((a, b) -> b.getSpPosition() > a.getSpPosition() ? 1 : -1).toList();
             List<Long> spIdList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpId).toList();
             List<Integer> gradeList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpGrade).toList();
+
 
             if (!players.isEmpty()) {
                 List<PlayerRecentPriceDto> priceList = playerPriceRepository.findRecentPriceList(spIdList, gradeList);
 
-                players.stream()
-                        .sorted((a, b) -> Math.toIntExact(a.getSpPosition() - b.getSpPosition()))
-                        .forEach(p -> {
-                            p.setPositionName(positionMap.get(p.getSpPosition()));
+                players.forEach(p -> {
+                    p.setPositionName(positionMap.get(p.getSpPosition()));
 
-                            priceList.stream()
-                                    .filter(price ->
-                                            price.getPlayerId().equals(p.getSpId()) && price.getGrade().equals(p.getSpGrade())
-                                    ).findAny().ifPresentOrElse(v -> {
-                                                p.setPrice(v.getPrice());
-                                                p.setName(v.getPlayerName());
-                                                p.setSeasonId(v.getSeasonId());
-                                                p.setSeasonImageUrl(v.getSeasonImageUrl());
-                                            }, () -> log.error("선수 가격이 존재하지 않습니다 {}", p.getSpId())
-                                    );
-                        });
+                    priceList.stream()
+                            .filter(price ->
+                                    price.getPlayerId().equals(p.getSpId()) && price.getGrade().equals(p.getSpGrade())
+                            ).findAny().ifPresentOrElse(v -> {
+                                        p.setPrice(v.getPrice());
+                                        p.setName(v.getPlayerName());
+                                        p.setSeasonId(v.getSeasonId());
+                                        p.setSeasonImageUrl(v.getSeasonImageUrl());
+                                    }, () -> log.error("선수 가격이 존재하지 않습니다 {}", p.getSpId())
+                            );
+                });
             }
+
+            matchInfo.setPlayer(players);
         }
         return matchDetail;
     }

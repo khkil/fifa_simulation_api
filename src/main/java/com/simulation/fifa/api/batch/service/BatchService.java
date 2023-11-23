@@ -212,12 +212,14 @@ public class BatchService {
     @Transactional
     public void createSeasons() {
         List<Long> seasonIds = seasonRepository.findAll().stream().map(Season::getId).toList();
-        List<Season> seasons = getSeasonIdList()
+        List<SeasonIdDto> allSeasons = getSeasonIdList();
+        
+        List<Season> newSeasons = allSeasons
                 .stream()
                 .map(v -> v.toEntity(v))
                 .filter(v -> !seasonIds.contains(v.getId()))
                 .toList();
-        seasonRepository.saveAll(seasons);
+        seasonRepository.saveAll(newSeasons);
     }
 
     @Transactional
