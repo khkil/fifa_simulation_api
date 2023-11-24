@@ -213,7 +213,7 @@ public class BatchService {
     public void createSeasons() {
         List<Long> seasonIds = seasonRepository.findAll().stream().map(Season::getId).toList();
         List<SeasonIdDto> allSeasons = getSeasonIdList();
-        
+
         List<Season> newSeasons = allSeasons
                 .stream()
                 .map(v -> v.toEntity(v))
@@ -275,13 +275,65 @@ public class BatchService {
     @Transactional
     public void createPlayers() {
         Set<SpIdDto> allSpIdList = getPlayerSpIdList();
-        Set<Long> allPlayers = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
-        Set<Long> remainPlayers = allSpIdList.stream().map(SpIdDto::getId).filter(v -> !allPlayers.contains(v)).collect(Collectors.toSet());
-        createPlayers(remainPlayers);
+        Set<Long> allPlayerIds = playerRepository.findAll().stream().map(Player::getId).collect(Collectors.toSet());
+        Set<Long> remainPlayerIds = allSpIdList.stream().map(SpIdDto::getId).filter(v -> !allPlayerIds.contains(v)).collect(Collectors.toSet());
+        createPlayers(remainPlayerIds);
     }
 
     @Transactional
-    public void createPlayers(Set<Long> remainPlayers) {
+    public void createNewPlayers() {
+        List<Long> seasonIds = seasonRepository.findAll().stream().map(Season::getId).toList();
+        List<Season> newSeasons = new ArrayList<>();
+        try {
+            Document document = Jsoup.connect(siteUrl + "/datacenter").get();
+            Elements elements = document.getElementsByClass("season");
+            for (Element el : elements) {
+                long seasonId = Long.parseLong(el.getElementsByClass("season_check").get(0).attr("data-no"));
+                if (!seasonIds.contains(seasonId)) {
+                    Element seasonInfo = el.getElementsByTag("img").get(0);
+                    String seasonName = seasonInfo.attr("alt");
+                    String seasonImgUrl = seasonInfo.attr("src");
+
+                    newSeasons.add(Season
+                            .builder()
+                            .id(seasonId)
+                            .name(seasonName)
+                            .imageUrl(seasonImgUrl)
+                            .build()
+                    );
+                }
+            }
+
+            seasonRepository.saveAll(newSeasons);
+
+        } catch (IOException e) {
+            log.error("신규 시즌 생성 오류 {0}", e);
+        } finally {
+
+            String seasonListStr = "";
+            if (!newSeasons.isEmpty()) {
+                seasonListStr += ",";
+            }
+            for (Season season : newSeasons) {
+                seasonListStr += season.getId() + ",";
+            }
+
+            if (!seasonListStr.isEmpty()) {
+                try {
+                    Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerList")
+                            .data("strSeason", seasonListStr)
+                            .post();
+                    Set<Long> newPlayerIds = document.getElementsByClass("btn_preview").stream().map(v -> Long.parseLong(v.attr("data-no"))).collect(Collectors.toSet());
+                    createPlayers(newPlayerIds, 10000);
+                } catch (IOException e) {
+                    log.error("신규시즌 선수 생성 오류 {0}", e);
+                }
+            }
+        }
+    }
+
+    @Transactional
+    public void createPlayers(Set<Long> playerIds, int onceCreateCount) {
         long startTime = System.currentTimeMillis();
 
         Set<Player> players = new LinkedHashSet<>();
@@ -292,22 +344,21 @@ public class BatchService {
         Map<String, Skill> skillMap = skillRepository.findAll().stream().collect(Collectors.toMap(Skill::getSkillName, skill -> skill));
         Map<String, Club> clubMap = clubRepository.findAll().stream().collect(Collectors.toMap(Club::getClubName, club -> club));
 
-        Set<SpIdDto> allSpIdList = getPlayerSpIdList();
+       /* Set<SpIdDto> allSpIdList = getPlayerSpIdList();
 
         List<SpIdDto> spIdList = allSpIdList.stream()
-                .filter(v -> remainPlayers.contains(v.getId()))
-                .toList();
+                .filter(v -> playerIds.contains(v.getId()))
+                .toList();*/
 
-        int createSize = Math.min(ONCE_CREATE_PLAYER_COUNT, remainPlayers.size());
+        int createSize = Math.min(onceCreateCount, playerIds.size());
 
-        for (SpIdDto spidDto : spIdList.subList(0, createSize)) {
-            Long spId = spidDto.getId();
+        for (Long spId : playerIds.stream().toList().subList(0, createSize)) {
             try {
                 Document document = Jsoup.connect(siteUrl + "/DataCenter/PlayerInfo?spid=" + spId).get();
+                String playerName = document.getElementsByClass("name_wrap").get(0).getElementsByClass("name").get(0).text();
 
-                PlayerBatchDto playerInfo = new PlayerBatchDto(spidDto.getId(), spidDto.getName());
+                PlayerBatchDto playerInfo = new PlayerBatchDto(spId, playerName);
 
-                Elements e = document.getElementsByClass("etc foot");
                 // 선수 주발, 약발 설정
                 String[] foots = document.getElementsByClass("etc foot").get(0).html().split("–");
                 for (String foot : foots) {
@@ -388,6 +439,7 @@ public class BatchService {
                                 .skill(skillMap.get(el.html()))
                                 .build()
                         )
+                        .filter(v -> v.getSkill() != null && v.getSkill().getSkillName() != null && !v.getSkill().getSkillName().isEmpty())
                         .collect(Collectors.toSet());
 
                 player.updatePlayerClubAssociations(playerClubAssociations);
@@ -410,11 +462,19 @@ public class BatchService {
 
         log.info("jsoup 파싱 총 {}s 소요", (domParsingEndTime - startTime) / 1000);
         log.info("총 {} 명 선수 생성 성공 {}s 소요", players.size(), (System.currentTimeMillis() - startTime) / 1000);
-        log.info("남은 선수 : {} 명", spIdList.size() - players.size());
+        log.info("남은 선수 : {} 명", playerIds.size() - players.size());
+    }
+
+    @Transactional
+    public void createPlayers(Set<Long> playerIds) {
+        createPlayers(playerIds, ONCE_CREATE_PLAYER_COUNT);
     }
 
     public List<CheckPlayerPriceDto> checkPrice() {
         return playerRepository.findCheckPrice();
+    }
+
+    private void createPlayer(Long playerIds) {
     }
 
     private Set<PlayerPrice> makePriceHistories(Player player) {

@@ -42,6 +42,12 @@ public class BatchController {
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("선수 생성 성공"));
     }
 
+    @PostMapping("/new-players")
+    public ResponseEntity<ApiResponse<?>> createNewPlayers() {
+        batchService.createNewPlayers();
+        return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("신규 시즌 선수 생성 성공"));
+    }
+
     @PostMapping("/price")
     public ResponseEntity<ApiResponse<?>> createPrice(@RequestBody PriceDateDto priceDateDto) {
         LocalDate date = priceDateDto.getDate();
