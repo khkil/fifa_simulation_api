@@ -152,11 +152,16 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .join(player.season, season)
                 .join(player.priceList, playerPrice).on(player.id.eq(playerPrice.player.id))
                 .where(playerPrice.grade.eq(1),
+                        playerPrice.price.goe(1000000000),
                         playerPrice.date.in(dateList),
                         season.id.in(usageSeasons),
                         playerPrice.price.goe(1000)
                 )
-                .groupBy(player.id)//.having(percentage(priceFromDate(yesterday), priceFromDate(today)).isNotNull().and(playerPrice.price.goe(1000)))
+                .groupBy(player.id)
+                .having(percentage(priceFromDate(yesterday), priceFromDate(today)).isNotNull()
+                        .and(priceFromDate(yesterday).goe(1000000000))
+                        .and(priceFromDate(today).goe(1000000000))
+                )
                 .orderBy(order != null && order.isAscending()
                         ? percentage(priceFromDate(yesterday), priceFromDate(today)).asc()
                         : percentage(priceFromDate(yesterday), priceFromDate(today)).desc()
