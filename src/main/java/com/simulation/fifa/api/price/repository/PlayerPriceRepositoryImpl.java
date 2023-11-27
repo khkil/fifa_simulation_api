@@ -150,7 +150,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 ))
                 .from(player)
                 .join(player.season, season)
-                .join(player.priceList, playerPrice)
+                .join(player.priceList, playerPrice).on(player.id.eq(playerPrice.player.id))
                 .where(playerPrice.grade.eq(1),
                         playerPrice.date.in(dateList),
                         season.id.in(usageSeasons),

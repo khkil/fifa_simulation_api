@@ -22,6 +22,8 @@ public class Season {
 
     private String imageUrl;
 
+    private Boolean isPopular;
+
     @OneToMany
     private List<Player> players;
 }
