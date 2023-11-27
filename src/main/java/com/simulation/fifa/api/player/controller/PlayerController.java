@@ -5,6 +5,9 @@ import com.simulation.fifa.api.player.PlayerService;
 import com.simulation.fifa.api.player.dto.PlayerDetailDto;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
+import com.simulation.fifa.api.price.dto.PlayerPriceWaveDto;
+import com.simulation.fifa.api.price.service.PlayerPriceService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PlayerController {
     private final PlayerService playerService;
+    private final PlayerPriceService playerPriceService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> findAll(Pageable pageable, PlayerSearchDto playerSearchDto) {
@@ -33,5 +37,11 @@ public class PlayerController {
     public ResponseEntity<ApiResponse<?>> findById(@PathVariable Long id) {
         PlayerDetailDto playerDetail = playerService.findById(id);
         return ResponseEntity.ok(ApiResponse.createSuccess(playerDetail));
+    }
+
+    @GetMapping("/price-wave")
+    public ResponseEntity<ApiResponse<?>> findPriceWave(Pageable pageable) {
+        List<PlayerPriceWaveDto> playerPriceWave = playerPriceService.findPlayerPriceWave(pageable);
+        return ResponseEntity.ok(ApiResponse.createSuccess(playerPriceWave));
     }
 }
