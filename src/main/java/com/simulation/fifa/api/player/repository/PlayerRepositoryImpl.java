@@ -55,10 +55,14 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 nationIdsIn(playerSearchDto.getNationIds())
         };
 
+        boolean hasWhere = !Arrays.stream(whereConditions).filter(Objects::nonNull).toList().isEmpty();
+
         List<Long> playerIds = jpaQueryFactory
-                .select(playerPositionAssociation.player.id)
-                .from(playerPositionAssociation)
-                .leftJoin(playerPositionAssociation.player, player)
+                .select(player.id,
+                        player.overallAvg,
+                        player.name).distinct()
+                .from(player)
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
                 .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
                 .leftJoin(playerSkillAssociation.skill, skill)
                 .leftJoin(player.playerClubAssociations, playerClubAssociation)
@@ -67,12 +71,108 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .leftJoin(player.nation, nation)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .groupBy(player.id)
-                //.orderBy(playerPositionAssociation.overall.avg().desc())
+                .orderBy(player.overallAvg.desc(), player.name.desc())
                 .where(whereConditions)
-                .fetch();
+                .fetch()
+                .stream()
+                .map(v -> v.get(player.id))
+                .toList();
 
         if (playerIds.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>());
+        }
+
+        long count;
+
+        if (!hasWhere) {
+            count = jpaQueryFactory
+                    .select(player.count())
+                    .from(player)
+                    .fetchFirst();
+        } else {
+            List<Long> searchedPlayerIds = jpaQueryFactory
+                    .select(player.id).distinct()
+                    .from(player)
+                    .leftJoin(player.season, season)
+                    .leftJoin(player.nation, nation)
+                    .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
+                    .leftJoin(playerSkillAssociation.skill, skill)
+                    .leftJoin(player.playerClubAssociations, playerClubAssociation)
+                    .leftJoin(playerClubAssociation.club, club)
+                    .where(whereConditions)
+                    .fetch();
+
+            count = jpaQueryFactory
+                    .select(player.count())
+                    .from(player)
+                    .where(player.id.in(searchedPlayerIds))
+                    .fetchFirst();
+        }
+
+        Map<Long, LocalDate> recentDateMap = jpaQueryFactory
+                .selectFrom(playerPrice)
+                .join(playerPrice.player, player)
+                .where(player.id.in(playerIds))
+                .transform(groupBy(player.id)
+                        .as(max(playerPrice.date))
+                );
+
+        BooleanBuilder conditions = new BooleanBuilder();
+
+        for (long playerId : playerIds) {
+            if (recentDateMap.get(playerId) != null) {
+                conditions.or(
+                        player.id.eq(playerId)
+                                .and(playerPrice.date.eq(recentDateMap.get(playerId)))
+                );
+            }
+        }
+
+        List<PlayerListDto> players = new ArrayList<>(jpaQueryFactory
+                .selectFrom(player)
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
+                .leftJoin(playerPositionAssociation.position, position)
+                .leftJoin(player.season, season)
+                .leftJoin(player.priceList, playerPrice)
+                .where(conditions)
+                .transform(groupBy(player.id)
+                        .list(new QPlayerListDto(
+                                player.id,
+                                player.name,
+                                player.pay,
+                                player.preferredFoot,
+                                player.leftFoot,
+                                player.rightFoot,
+                                set(new QPlayerPriceListDto(
+                                        playerPrice.price,
+                                        playerPrice.grade
+                                )),
+                                new QPlayerListDto_Average(
+                                        speedAvg(),
+                                        shootAvg(),
+                                        passAvg(),
+                                        dribbleAvg(),
+                                        defendAvg(),
+                                        physicalAvg()
+                                ),
+                                new QSeasonListDto(
+                                        season.id,
+                                        season.name,
+                                        season.imageUrl
+                                ),
+                                set(new QPositionDto(
+                                        position.positionName,
+                                        playerPositionAssociation.overall
+                                ))
+                        ))
+                ).stream()
+                .sorted(Comparator.comparingInt(a -> playerIds.indexOf(a.getSpId())))
+                .toList()
+
+        );
+
+        return new PageImpl<>(players, pageable, count);
+        /*if (playerIds.isEmpty()) {
             return new PageImpl<>(new ArrayList<>(), pageable, 0);
         }
 
@@ -147,17 +247,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 ))
                         ))
                 )
-        /*        .stream().sorted((a, b) -> {
-                    double avg1 = (double) a.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / a.getPositions().size();
-                    double avg2 = (double) b.getPositions().stream().map(PositionDto::getOverall).reduce(0, Integer::sum) / b.getPositions().size();
-                    return (int) (avg2 - avg1);
-                }).toList()*/
         );
 
- /*       List<String> playerNames = players.stream().map(PlayerListDto::getPlayerName).distinct().toList();
-        players.sort(Comparator.comparingInt(a -> playerNames.indexOf(a.getPlayerName())));*/
-
         return new PageImpl<>(players, pageable, count);
+         */
     }
 
     @Override
