@@ -203,7 +203,7 @@ public class UserService {
             return squad;
 
         } catch (Exception e) {
-            throw new RuntimeException("공홈 유저 스쿼드 조회 실패 {}", e);
+            throw new RuntimeException("공홈 유저 스쿼드 조회 실패 \n", e);
         } finally {
             webDriver.quit();
         }
@@ -354,7 +354,10 @@ public class UserService {
             Document document = Jsoup.connect(siteUrl + "/profile/common/PopProfile")
                     .data("strCharacterName", nickname.trim())
                     .get();
-            return document.getElementById("hidGuestSN").val();
+
+            String ogUrl = document.select("meta[property=og:url]").attr("content");
+            String[] arr = ogUrl.split("/");
+            return arr[arr.length - 1];
 
         } catch (IOException e) {
             throw new RuntimeException("유저 히든 아이디 조회 실패", e);
