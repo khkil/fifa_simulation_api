@@ -51,16 +51,16 @@ public class BatchController {
     @PostMapping("/price")
     public ResponseEntity<ApiResponse<?>> createPrice(@RequestBody PriceDateDto priceDateDto) {
         LocalDate date = priceDateDto.getDate();
-        batchService.deletePreviousPrice();
         batchService.createPrice(date);
+        batchService.deletePreviousPrice();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("시세 생성 성공"));
     }
 
     @PostMapping("/daily-price")
     public ResponseEntity<ApiResponse<?>> createDailyPrice() {
         LocalDate localDate = LocalDate.now();
-        batchService.deletePreviousPrice();
         batchService.createPrice(localDate);
+        batchService.deletePreviousPrice();
         return ResponseEntity.ok(ApiResponse.createSuccessWithMessage("오늘자 시세 생성 성공"));
     }
 

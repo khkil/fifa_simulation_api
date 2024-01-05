@@ -94,7 +94,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
     public long deletePreviousPrice(LocalDate previousDate) {
         return jpaQueryFactory
                 .delete(playerPrice)
-                .where(playerPrice.date.loe(previousDate))
+                .where(playerPrice.date.eq(previousDate))
                 .execute();
     }
 
