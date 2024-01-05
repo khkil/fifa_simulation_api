@@ -140,8 +140,8 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         return jpaQueryFactory.select(new QPlayerPriceWaveDto(
                         player.id,
                         player.name,
-                        todayPrice.price,
                         yesterdayPrice.price,
+                        todayPrice.price,
                         percentage,
                         season.imageUrl
                 ))
