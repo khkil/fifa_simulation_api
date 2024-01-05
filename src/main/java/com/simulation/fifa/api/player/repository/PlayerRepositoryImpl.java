@@ -2,10 +2,14 @@ package com.simulation.fifa.api.player.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Path;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.simulation.fifa.api.associations.entity.QPlayerClubAssociation;
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto_Date;
@@ -49,15 +53,27 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         Predicate[] whereConditions = new Predicate[]{
                 //season.id.ne(110L), // 교불 아이콘 제외
                 seasonIdsIn(playerSearchDto.getSeasonIds()),
-                clubIdsIn(playerSearchDto.getClubIds()),
+                //clubIdsAnd(playerSearchDto.getClubIds()),
                 skillIdsIn(playerSearchDto.getSkillIds()),
                 nameContains(playerSearchDto.getName()),
                 nationIdsIn(playerSearchDto.getNationIds())
         };
 
         boolean hasWhere = !Arrays.stream(whereConditions).filter(Objects::nonNull).toList().isEmpty();
+        JPAQuery<Tuple> playerIds = jpaQueryFactory
+                .select(player.id,
+                        player.overallAvg,
+                        player.name).distinct()
+                .from(player);
 
-        List<Long> playerIds = jpaQueryFactory
+        clubIdsAnd(playerIds, playerSearchDto.getClubIds());
+
+        playerIds.offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(player.overallAvg.desc(), player.name.desc())
+                .fetch();
+        return null;
+       /* List<Long> playerIds = jpaQueryFactory
                 .select(player.id,
                         player.overallAvg,
                         player.name).distinct()
@@ -168,89 +184,14 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 ).stream()
                 .sorted(Comparator.comparingInt(a -> playerIds.indexOf(a.getSpId())))
                 .toList()
-
         );
 
-        return new PageImpl<>(players, pageable, count);
-        /*if (playerIds.isEmpty()) {
-            return new PageImpl<>(new ArrayList<>(), pageable, 0);
-        }
+        jpaQueryFactory.selectFrom(player)
+                .where(JPAExpressions.selectFrom(playerClubAssociation).join(playerClubAssociation.club, club).where(club.id.eq(54L)).exists(),
+                        JPAExpressions.selectFrom(playerClubAssociation).join(playerClubAssociation.club, club).where(club.id.eq(2434L)).exists())
+                .fetch();
 
-        int count = jpaQueryFactory
-                .select(player.count())
-                .from(player)
-                .leftJoin(player.playerSkillAssociations, playerSkillAssociation)
-                .leftJoin(playerSkillAssociation.skill, skill)
-                .leftJoin(player.playerClubAssociations, playerClubAssociation)
-                .leftJoin(playerClubAssociation.club, club)
-                .leftJoin(player.season, season)
-                .leftJoin(player.nation, nation)
-                .groupBy(player.id)
-                .where(whereConditions)
-                .fetch()
-                .size();
-
-        Map<Long, LocalDate> recentDatemap = jpaQueryFactory
-                .selectFrom(playerPrice)
-                .join(playerPrice.player, player)
-                .where(player.id.in(playerIds))
-                .transform(groupBy(player.id)
-                        .as(max(playerPrice.date))
-                );
-
-        BooleanBuilder conditions = new BooleanBuilder();
-
-        for (long playerId : playerIds) {
-            if (recentDatemap.get(playerId) != null) {
-                conditions.or(
-                        player.id.eq(playerId)
-                                .and(playerPrice.date.eq(recentDatemap.get(playerId)))
-                );
-            }
-        }
-
-        List<PlayerListDto> players = new ArrayList<>(jpaQueryFactory
-                .selectFrom(player)
-                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
-                .leftJoin(playerPositionAssociation.position, position)
-                .leftJoin(player.season, season)
-                .leftJoin(player.priceList, playerPrice)
-                .where(conditions)
-                .transform(groupBy(player.id)
-                        .list(new QPlayerListDto(
-                                player.id,
-                                player.name,
-                                player.pay,
-                                player.preferredFoot,
-                                player.leftFoot,
-                                player.rightFoot,
-                                set(new QPlayerPriceListDto(
-                                        playerPrice.price,
-                                        playerPrice.grade
-                                )),
-                                new QPlayerListDto_Average(
-                                        speedAvg(),
-                                        shootAvg(),
-                                        passAvg(),
-                                        dribbleAvg(),
-                                        defendAvg(),
-                                        physicalAvg()
-                                ),
-                                new QSeasonListDto(
-                                        season.id,
-                                        season.name,
-                                        season.imageUrl
-                                ),
-                                set(new QPositionDto(
-                                        position.positionName,
-                                        playerPositionAssociation.overall
-                                ))
-                        ))
-                )
-        );
-
-        return new PageImpl<>(players, pageable, count);
-         */
+        return new PageImpl<>(players, pageable, count);*/
     }
 
     @Override
@@ -358,8 +299,13 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         return seasonIds != null && seasonIds.length > 0 ? season.id.in(seasonIds) : null;
     }
 
-    private BooleanExpression clubIdsIn(Long[] clubIds) {
-        return clubIds != null && clubIds.length > 0 ? club.id.in(clubIds) : null;
+    private void clubIdsAnd(JPAQuery<Tuple> tuples, Long[] clubIds) {
+        if (clubIds != null && clubIds.length > 0) {
+            Arrays.stream(clubIds).forEach(v -> {
+                QPlayerClubAssociation qPlayerClubAssociation = new QPlayerClubAssociation("player_club_" + v);
+                tuples.join(player.playerClubAssociations, qPlayerClubAssociation).on(qPlayerClubAssociation.club.id.eq(v));
+            });
+        }
     }
 
     private BooleanExpression skillIdsIn(Long[] skillIds) {
