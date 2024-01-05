@@ -9,6 +9,7 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.simulation.fifa.api.price.dto.PlayerPriceWaveDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceWaveDto;
+import com.simulation.fifa.api.price.entity.QPlayerPrice;
 import com.simulation.fifa.api.user.dto.squad.QSquadDto_TotalPrice;
 import com.simulation.fifa.api.user.dto.squad.SquadDto;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
@@ -121,7 +122,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
 
     @Override
     public List<PlayerPriceWaveDto> findPlayerPriceWave(Pageable pageable) {
-        List<Long> usageSeasons = List.of(100L, 101L, 256L, 300L, 801L, 802L);
+        List<Long> usageSeasons = List.of(100L, 101L, 256L, 801L, 802L);
 
         List<LocalDate> dateList = jpaQueryFactory
                 .select(playerPrice.date)
@@ -139,7 +140,34 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         Sort sort = pageable.getSort();
         Sort.Order order = sort.getOrderFor("wave");
 
-        return jpaQueryFactory
+        QPlayerPrice todayPrice = new QPlayerPrice("today");
+        QPlayerPrice yesterdayPrice = new QPlayerPrice("yesterday");
+
+        return jpaQueryFactory.select(new QPlayerPriceWaveDto(
+                        player.id,
+                        player.name,
+                        todayPrice.price,
+                        yesterdayPrice.price,
+                        (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100),
+                        season.imageUrl
+                ))
+                .from(player)
+                .join(player.priceList, todayPrice)
+                .join(yesterdayPrice).on(todayPrice.player.id.eq(yesterdayPrice.player.id))
+                .join(player.season, season)
+                .where(todayPrice.grade.eq(1),
+                        yesterdayPrice.grade.eq(1),
+                        todayPrice.date.eq(today),
+                        yesterdayPrice.date.eq(yesterday)
+                )
+                .orderBy(order != null && order.isAscending()
+                        ? (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100).asc()
+                        : (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100).desc()
+                )
+                .fetch();
+
+
+        /*return jpaQueryFactory
                 .select(new QPlayerPriceWaveDto(
                         player.id,
                         player.name,
@@ -167,11 +195,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                         : percentage(priceFromDate(yesterday), priceFromDate(today)).desc()
                 )
                 .limit(10)
-                .fetch();
-    }
-
-    private NumberExpression<Long> priceFromDate(LocalDate date) {
-        return playerPrice.date.when(date).then(playerPrice.price).otherwise(0L).avg().longValue();
+                .fetch();*/
     }
 
     private NumberExpression<Long> percentage(NumberExpression<Long> yesterdayPrice, NumberExpression<Long> todayPrice) {
