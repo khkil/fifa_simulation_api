@@ -17,6 +17,5 @@ public interface PlayerPriceRepositoryCustom {
 
     List<SquadDto.TotalPrice> findPlayerPriceByIdsAndDateBetween(List<SquadDto.Player> players, LocalDate start, LocalDate end);
 
-    List<PlayerPriceWaveDto> findPlayerPriceWave(Pageable pageable);
-
+    List<PlayerPriceWaveDto> findPriceRanks(Pageable pageable);
 }

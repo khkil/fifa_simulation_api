@@ -1,10 +1,6 @@
 package com.simulation.fifa.api.price.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Tuple;
-import com.querydsl.core.types.Order;
-import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.simulation.fifa.api.price.dto.PlayerPriceWaveDto;
@@ -16,12 +12,10 @@ import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
 import com.simulation.fifa.api.price.dto.QPlayerRecentPriceDto;
 
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -121,9 +115,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
     }
 
     @Override
-    public List<PlayerPriceWaveDto> findPlayerPriceWave(Pageable pageable) {
-        List<Long> usageSeasons = List.of(100L, 101L, 256L, 801L, 802L);
-
+    public List<PlayerPriceWaveDto> findPriceRanks(Pageable pageable) {
         List<LocalDate> dateList = jpaQueryFactory
                 .select(playerPrice.date)
                 .from(playerPrice)
@@ -143,12 +135,14 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         QPlayerPrice todayPrice = new QPlayerPrice("today");
         QPlayerPrice yesterdayPrice = new QPlayerPrice("yesterday");
 
+        NumberExpression<Long> percentage = (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100);
+
         return jpaQueryFactory.select(new QPlayerPriceWaveDto(
                         player.id,
                         player.name,
                         todayPrice.price,
                         yesterdayPrice.price,
-                        (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100),
+                        percentage,
                         season.imageUrl
                 ))
                 .from(player)
@@ -158,47 +152,16 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .where(todayPrice.grade.eq(1),
                         yesterdayPrice.grade.eq(1),
                         todayPrice.date.eq(today),
-                        yesterdayPrice.date.eq(yesterday)
+                        yesterdayPrice.date.eq(yesterday),
+                        yesterdayPrice.price.goe(1000),
+                        todayPrice.price.goe(1000),
+                        season.id.notIn(300L)
                 )
                 .orderBy(order != null && order.isAscending()
-                        ? (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100).asc()
-                        : (todayPrice.price.subtract(yesterdayPrice.price)).divide(yesterdayPrice.price).multiply(100).desc()
-                )
-                .fetch();
-
-
-        /*return jpaQueryFactory
-                .select(new QPlayerPriceWaveDto(
-                        player.id,
-                        player.name,
-                        priceFromDate(yesterday),
-                        priceFromDate(today),
-                        percentage(priceFromDate(yesterday), priceFromDate(today)),
-                        season.imageUrl
-                ))
-                .from(player)
-                .join(player.season, season)
-                .join(player.priceList, playerPrice).on(player.id.eq(playerPrice.player.id))
-                .where(playerPrice.grade.eq(1),
-                        playerPrice.price.goe(1000000000),
-                        playerPrice.date.in(dateList),
-                        season.id.in(usageSeasons),
-                        playerPrice.price.goe(1000)
-                )
-                .groupBy(player.id)
-                .having(percentage(priceFromDate(yesterday), priceFromDate(today)).isNotNull()
-                        .and(priceFromDate(yesterday).goe(1000000000))
-                        .and(priceFromDate(today).goe(1000000000))
-                )
-                .orderBy(order != null && order.isAscending()
-                        ? percentage(priceFromDate(yesterday), priceFromDate(today)).asc()
-                        : percentage(priceFromDate(yesterday), priceFromDate(today)).desc()
+                        ? percentage.asc()
+                        : percentage.desc()
                 )
                 .limit(10)
-                .fetch();*/
-    }
-
-    private NumberExpression<Long> percentage(NumberExpression<Long> yesterdayPrice, NumberExpression<Long> todayPrice) {
-        return (todayPrice.subtract(yesterdayPrice)).divide(yesterdayPrice).multiply(100);
+                .fetch();
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 public class PlayerPriceService {
     private final PlayerPriceRepository playerPriceRepository;
 
-    public List<PlayerPriceWaveDto> findPlayerPriceWave(Pageable pageable) {
-        return playerPriceRepository.findPlayerPriceWave(pageable);
+    public List<PlayerPriceWaveDto> findPriceRanks(Pageable pageable) {
+        return playerPriceRepository.findPriceRanks(pageable);
     }
 }
