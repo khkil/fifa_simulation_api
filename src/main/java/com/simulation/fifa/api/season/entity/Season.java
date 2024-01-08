@@ -22,7 +22,7 @@ public class Season {
 
     private String imageUrl;
 
-    private Boolean isPopular;
+    private Boolean useSimulation;
 
     @OneToMany
     private List<Player> players;
