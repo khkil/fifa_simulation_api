@@ -60,22 +60,10 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         };
 
         boolean hasWhere = !Arrays.stream(whereConditions).filter(Objects::nonNull).toList().isEmpty();
-        JPAQuery<Tuple> playerIds = jpaQueryFactory
+
+        List<Long> playerIds = jpaQueryFactory
                 .select(player.id,
                         player.maxOverall,
-                        player.name).distinct()
-                .from(player);
-
-        clubIdsAnd(playerIds, playerSearchDto.getClubIds());
-
-        playerIds.offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(player.maxOverall.desc(), player.name.desc())
-                .fetch();
-        return null;
-       /* List<Long> playerIds = jpaQueryFactory
-                .select(player.id,
-                        player.overallAvg,
                         player.name).distinct()
                 .from(player)
                 .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
@@ -87,7 +75,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .leftJoin(player.nation, nation)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(player.overallAvg.desc(), player.name.desc())
+                .orderBy(player.maxOverall.desc(), player.name.desc())
                 .where(whereConditions)
                 .fetch()
                 .stream()
@@ -186,12 +174,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                 .toList()
         );
 
-        jpaQueryFactory.selectFrom(player)
-                .where(JPAExpressions.selectFrom(playerClubAssociation).join(playerClubAssociation.club, club).where(club.id.eq(54L)).exists(),
-                        JPAExpressions.selectFrom(playerClubAssociation).join(playerClubAssociation.club, club).where(club.id.eq(2434L)).exists())
-                .fetch();
-
-        return new PageImpl<>(players, pageable, count);*/
+        return new PageImpl<>(players, pageable, count);
     }
 
     @Override
