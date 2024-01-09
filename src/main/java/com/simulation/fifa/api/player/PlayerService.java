@@ -5,7 +5,6 @@ import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

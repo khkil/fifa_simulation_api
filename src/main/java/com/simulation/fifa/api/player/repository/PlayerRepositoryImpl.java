@@ -62,7 +62,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
         boolean hasWhere = !Arrays.stream(whereConditions).filter(Objects::nonNull).toList().isEmpty();
         JPAQuery<Tuple> playerIds = jpaQueryFactory
                 .select(player.id,
-                        player.overallAvg,
+                        player.maxOverall,
                         player.name).distinct()
                 .from(player);
 
@@ -70,7 +70,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
 
         playerIds.offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(player.overallAvg.desc(), player.name.desc())
+                .orderBy(player.maxOverall.desc(), player.name.desc())
                 .fetch();
         return null;
        /* List<Long> playerIds = jpaQueryFactory

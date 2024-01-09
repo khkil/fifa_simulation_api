@@ -4,39 +4,39 @@
 
 - Mysql 설치
 
-  - sudo dnf install https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
-  - sudo dnf install mysql-community-server
-  - sudo systemctl start mysqld
+    - sudo dnf installhttps://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+    - sudo dnf install mysql-community-server
+    - sudo systemctl start mysqld
 
 - 초기 패스워드 찾기
 
-  - sudo grep 'temporary password' /var/log/mysqld.log
-  - mysql -u root -p {log_password}
+    - sudo grep 'temporary password' /var/log/mysqld.log
+    - mysql -u root -p {log_password}
 
 - 계정 권한 부여
-  - ALTER USER ‘root@‘localhost’ identified by 'password';
-  - create user 'dev_user'@'%' identified by 'password';
-  - ALTER USER 'dev_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-  - grant all privileges on \*.\_ to 'dev_user'@'%';
-  - flush privileges;
+    - ALTER USER ‘root@‘localhost’ identified by 'password';
+    - create user 'dev_user'@'%' identified by 'password';
+    - ALTER USER 'dev_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+    - grant all privileges on \*.\_ to 'dev_user'@'%';
+    - flush privileges;
 
 ---
 
 ### JAVA
 
 - jdk17 설치
-  - sudo yum install java-17-amazon-corretto
+    - sudo yum install java-17-amazon-corretto
 
 ---
 
 ### NODE
 
 - node lts 설치
-  - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-  - ~/.nvm/nvm.sh
-  - nvm install --lts
-  - npm -v && node -v
-  - npm install -g yarn && npm install pnpm -g
+    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+    - ~/.nvm/nvm.sh
+    - nvm install --lts
+    - npm -v && node -v
+    - npm install -g yarn && npm install pnpm -g
 
 ---
 
@@ -44,14 +44,14 @@
 
 - certbot 설치
 
-  - sudo yum install certbot
-  - sudo certbot certonly --standalone -d {DOMAIN}
-  - sudo chmod -R 755 /etc/letsencrypt/
+    - sudo yum install certbot
+    - sudo certbot certonly --standalone -d {DOMAIN}
+    - sudo chmod -R 755 /etc/letsencrypt/
 
 - 자동갱신 등록
-  - sudo yum install cronie
-  - sudo crontab -e
-  - 0 18 1 \* \* sudo certbot renew --pre-hook "sudo systemctl stop nginx" --post-hook "sudo systemctl restart nginx"
+    - sudo yum install cronie
+    - sudo crontab -e
+    - 0 18 1 \* \* sudo certbot renew --pre-hook "sudo systemctl stop nginx" --post-hook "sudo systemctl restart nginx"
 
 ---
 
@@ -59,14 +59,14 @@
 
 - 설치
 
-  - sudo yum update
-  - sudo yum install nginx
+    - sudo yum update
+    - sudo yum install nginx
 
 - {domain}.conf 파일 등록
-  - cd /etc/nginx/conf.d
-  - sudo vi {DOMAIN}.conf
+    - cd /etc/nginx/conf.d
+    - sudo vi {DOMAIN}.conf
 
-```json
+```
 server {
    listen       443 ssl;
    server_name  {DOMAIN};
@@ -95,13 +95,13 @@ server {
 
 - SSH_KEY 생성
 
-  - ssh-keygen
-  - cat ~/.ssh/id_rsa.pub
-  - github 설정에 등록
+    - ssh-keygen
+    - cat ~/.ssh/id_rsa.pub
+    - github 설정에 등록
 
 - github clone
-  - sudo yum install git
-  - git clone git@github.com:khkil/find-me.git
+    - sudo yum install git
+    - git clone git@github.com:khkil/find-me.git
 
 ---
 
@@ -109,23 +109,23 @@ server {
 
 - pm2 설치
 
-  - npm install -g pm2
-  - pm2 ecosystem
+    - npm install -g pm2
+    - pm2 ecosystem
 
-  - 환경설정 파일 생성
-    vi ecosystem.config.js
+    - 환경설정 파일 생성
+      vi ecosystem.config.js
 
-```json
+```
 module.exports = {
-   apps: [
-      {
-         name: "fc-on",
-         script: "pnpm",
-         args: "start",
-         instances: 2,
-         exec_mode: "cluster",
-      },
-   ],
+  apps: [
+    {
+      name: "fc-on",
+      script: "pnpm",
+      args: "start",
+      instances: 2,
+      exec_mode: "cluster"
+    }
+  ]
 };
 ```
 
@@ -194,3 +194,21 @@ fi
 
 - sudo chmod +x deploy.sh
 - ./deploy.sh
+
+### Chrome
+
+- Chrome 설치
+    - wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+    - sudo yum install ./google-chrome-stable_current_x86_64.rpm
+- Chrome driver 설치
+    - google-chrome --version (버전확인 ex: Google Chrome 120.0.6099.199 )
+    - wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/120.0.6099.109/linux64/chromedriver-linux64.zip
+    - mv chromedriver-linux64/chromedriver  ~/fc-on/api/ (드라이버 프로젝트 root path로 이동)
+
+### Linux
+
+- Timezone 한국시간대로 변경
+    - sudo ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+    - date
+    
+    

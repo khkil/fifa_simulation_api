@@ -100,7 +100,7 @@ public class Player /*implements Persistable<Long>*/ {
 
     private Integer pay;
 
-    private Double overallAvg;
+    private Integer maxOverall;
 
     @ManyToOne
     Nation nation;
