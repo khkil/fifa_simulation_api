@@ -17,5 +17,4 @@ public interface PlayerRepositoryCustom {
     Optional<PlayerDetailDto> findByIdCustom(Long id);
 
     List<CheckPlayerPriceDto> findCheckPrice();
-
 }

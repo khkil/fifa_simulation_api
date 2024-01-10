@@ -17,7 +17,7 @@
     - ALTER USER ‘root@‘localhost’ identified by 'password';
     - create user 'dev_user'@'%' identified by 'password';
     - ALTER USER 'dev_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-    - grant all privileges on \*.\_ to 'dev_user'@'%';
+    - grant all privileges on \*.\* to 'dev_user'@'%';
     - flush privileges;
 
 ---
@@ -68,21 +68,27 @@
 
 ```
 server {
-   listen       443 ssl;
-   server_name  {DOMAIN};
+    listen 80;
+    server_name fc-on.com;
+    return 301 https://$server_name$request_uri;
+}
 
-   ssl_certificate /etc/letsencrypt/live/{DOMAIN}/fullchain.pem;
-   ssl_certificate_key /etc/letsencrypt/live/{DOMAIN}/privkey.pem;
+server {
+    listen       443 ssl;
+    server_name  fc-on.com;
 
-   ssl_session_cache    shared:SSL:1m;
-   ssl_session_timeout  5m;
+    ssl_certificate /etc/letsencrypt/live/$server_name/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$server_name/privkey.pem;
 
-   ssl_ciphers  HIGH:!aNULL:!MD5;
-   ssl_prefer_server_ciphers  on;
+    ssl_session_cache    shared:SSL:1m;
+    ssl_session_timeout  5m;
 
-   location / {
-      proxy_pass http://127.0.0.1:3000;
-   }
+    ssl_ciphers  HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers  on;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+    }
 }
 ```
 
