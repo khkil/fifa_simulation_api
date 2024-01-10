@@ -2,7 +2,9 @@ package com.simulation.fifa.api.player.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
 import com.simulation.fifa.api.club.dto.ClubListDto;
+import com.simulation.fifa.api.player.entity.PreferredFootEnum;
 import com.simulation.fifa.api.position.dto.PositionDto;
+import com.simulation.fifa.api.price.dto.PlayerPriceListDto;
 import com.simulation.fifa.api.season.dto.SeasonListDto;
 import lombok.Data;
 
@@ -10,18 +12,48 @@ import java.util.Set;
 
 @Data
 public class PlayerDetailDto {
-    private Long id;
-    private String name;
+    private Long spId;
+    private String playerName;
+    private Integer pay;
+    private PreferredFootEnum preferredFoot;
+    private Integer leftFoot;
+    private Integer rightFoot;
+    private Set<PlayerPriceListDto> priceList;
+    private PlayerListDto.Average average;
     private SeasonListDto season;
     private Set<PositionDto> positions;
-    private Set<ClubListDto> clubs;
 
     @QueryProjection
-    public PlayerDetailDto(Long id, String name, SeasonListDto season, Set<PositionDto> positions, Set<ClubListDto> clubs) {
-        this.id = id;
-        this.name = name;
+    public PlayerDetailDto(Long spId, String playerName, Integer pay, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, Set<PlayerPriceListDto> priceList, PlayerListDto.Average average, SeasonListDto season, Set<PositionDto> positions) {
+        this.spId = spId;
+        this.playerName = playerName;
+        this.pay = pay;
+        this.preferredFoot = preferredFoot;
+        this.leftFoot = leftFoot;
+        this.rightFoot = rightFoot;
+        this.priceList = priceList;
+        this.average = average;
         this.season = season;
         this.positions = positions;
-        this.clubs = clubs;
+    }
+
+    @Data
+    public static class Average {
+        private Integer speed;
+        private Integer shooting;
+        private Integer passing;
+        private Integer dribble;
+        private Integer defending;
+        private Integer physical;
+
+        @QueryProjection
+        public Average(Integer speed, Integer shooting, Integer passing, Integer dribble, Integer defending, Integer physical) {
+            this.speed = speed;
+            this.shooting = shooting;
+            this.passing = passing;
+            this.dribble = dribble;
+            this.defending = defending;
+            this.physical = physical;
+        }
     }
 }

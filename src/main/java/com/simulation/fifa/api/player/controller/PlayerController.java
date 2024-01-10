@@ -31,9 +31,9 @@ public class PlayerController {
         return ResponseEntity.ok(ApiResponse.createSuccess(players));
     }
 
-    @GetMapping("overall/{overall}")
-    public ResponseEntity<ApiResponse<?>> findByOverall(@PathVariable Long overall) {
-        PlayerDetailDto playerDetail = playerService.findById(overall);
+    @GetMapping("/{spId}")
+    public ResponseEntity<ApiResponse<?>> findByOverall(@PathVariable Long spId) {
+        PlayerDetailDto playerDetail = playerService.findById(spId);
         return ResponseEntity.ok(ApiResponse.createSuccess(playerDetail));
     }
 

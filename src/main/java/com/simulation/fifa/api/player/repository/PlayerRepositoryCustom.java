@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface PlayerRepositoryCustom {
     Page<PlayerListDto> findAllCustom(Pageable pageable, PlayerSearchDto playerSearchDto);
 
+
     Optional<PlayerDetailDto> findByIdCustom(Long id);
 
     List<CheckPlayerPriceDto> findCheckPrice();

@@ -178,20 +178,35 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
     }
 
     @Override
-    public Optional<PlayerDetailDto> findByIdCustom(Long id) {
+    public Optional<PlayerDetailDto> findByIdCustom(Long spId) {
 
         return jpaQueryFactory
                 .selectFrom(player)
-                .join(player.playerPositionAssociations, playerPositionAssociation)
-                .join(playerPositionAssociation.position, position)
-                .join(player.playerClubAssociations, playerClubAssociation)
-                .join(playerClubAssociation.club, club)
-                .join(player.season, season)
-                .where(player.id.eq(id))
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
+                .leftJoin(playerPositionAssociation.position, position)
+                .leftJoin(player.season, season)
+                .leftJoin(player.priceList, playerPrice)
+                .where(player.id.eq(spId))
                 .transform(groupBy(player.id)
                         .list(new QPlayerDetailDto(
                                 player.id,
                                 player.name,
+                                player.pay,
+                                player.preferredFoot,
+                                player.leftFoot,
+                                player.rightFoot,
+                                set(new QPlayerPriceListDto(
+                                        playerPrice.price,
+                                        playerPrice.grade
+                                )),
+                                new QPlayerListDto_Average(
+                                        speedAvg(),
+                                        shootAvg(),
+                                        passAvg(),
+                                        dribbleAvg(),
+                                        defendAvg(),
+                                        physicalAvg()
+                                ),
                                 new QSeasonListDto(
                                         season.id,
                                         season.name,
@@ -200,13 +215,9 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 set(new QPositionDto(
                                         position.positionName,
                                         playerPositionAssociation.overall
-                                )),
-                                set(new QClubListDto(
-                                        club.id,
-                                        club.clubName
                                 ))
-                        ))
-                ).stream().findAny();
+                        )))
+                .stream().findAny();
     }
 
     @Override
