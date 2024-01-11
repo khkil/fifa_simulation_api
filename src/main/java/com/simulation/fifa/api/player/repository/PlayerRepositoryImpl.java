@@ -195,6 +195,7 @@ public class PlayerRepositoryImpl implements PlayerRepositoryCustom {
                                 player.preferredFoot,
                                 player.leftFoot,
                                 player.rightFoot,
+                                player.maxOverall,
                                 set(new QPlayerPriceListDto(
                                         playerPrice.price,
                                         playerPrice.grade
