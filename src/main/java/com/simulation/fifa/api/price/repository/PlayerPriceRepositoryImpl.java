@@ -5,8 +5,10 @@ import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.*;
 import com.simulation.fifa.api.price.entity.QPlayerPrice;
+import com.simulation.fifa.api.season.dto.QSeasonListDto;
 import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.user.dto.squad.QSquadDto_TotalPrice;
 import com.simulation.fifa.api.user.dto.squad.SquadDto;
@@ -21,11 +23,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.group.GroupBy.max;
+import static com.querydsl.core.group.GroupBy.*;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
 import static com.simulation.fifa.api.season.entity.QSeason.season;
+import static com.simulation.fifa.api.position.entity.QPosition.position;
+import static com.simulation.fifa.api.associations.entity.QPlayerPositionAssociation.playerPositionAssociation;
 
 @RequiredArgsConstructor
 public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
@@ -178,24 +181,45 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         List<Long> usedSeasonIds = jpaQueryFactory.select(season.id).from(season).where(season.useSimulation.eq(true)).fetch();
 
         Predicate[] whereConditions = new Predicate[]{
-                calculateOverallByGrade().eq(overall),
+                playerPrice.grade.loe(7), // 강화 재료 표시 > 1~7강 까지만
+                calculateOverallByGrade(player.maxOverall).eq(overall),
                 playerPrice.date.eq(recentDate),
                 season.id.in(usedSeasonIds)
         };
-        
-        List<PriceOverallDto> list = jpaQueryFactory
-                .selectFrom(playerPrice)
+
+        List<Long> playerIds = jpaQueryFactory
+                .select(playerPrice.id)
+                .from(playerPrice)
                 .leftJoin(playerPrice.player, player)
                 .leftJoin(player.season, season)
                 .where(whereConditions)
                 .orderBy(playerPrice.price.asc(), player.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .fetch();
+
+
+        List<PriceOverallDto> list = jpaQueryFactory
+                .selectFrom(playerPrice)
+                .leftJoin(playerPrice.player, player)
+                .leftJoin(player.season, season)
+                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
+                .leftJoin(playerPositionAssociation.position, position)
+                .where(playerPrice.id.in(playerIds))
+                .orderBy(playerPrice.price.asc(), player.id.desc())
                 .transform(groupBy(player.id).list(
                         new QPriceOverallDto(
+                                player.id,
                                 player.name,
-                                calculateOverallByGrade(),
-                                playerPrice.price
+                                calculateOverallByGrade(player.maxOverall),
+                                playerPrice.price,
+                                playerPrice.grade,
+                                new QSeasonListDto(
+                                        season.id,
+                                        season.name,
+                                        season.imageUrl
+                                ),
+                                set(new QPositionDto(position.positionName, calculateOverallByGrade(playerPositionAssociation.overall)))
                         )
                 ));
 
@@ -210,7 +234,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
         return new PageImpl<>(list, pageable, count);
     }
 
-    private NumberExpression<Integer> calculateOverallByGrade() {
+    private NumberExpression<Integer> calculateOverallByGrade(NumberExpression<Integer> overall) {
         NumberExpression<Integer> plusStat = new CaseBuilder()
                 .when(playerPrice.grade.eq(2)).then(1)
                 .when(playerPrice.grade.eq(3)).then(2)
@@ -222,6 +246,6 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .when(playerPrice.grade.eq(9)).then(19)
                 .when(playerPrice.grade.eq(10)).then(24)
                 .otherwise(0);
-        return player.maxOverall.add(plusStat);
+        return overall.add(plusStat);
     }
 }

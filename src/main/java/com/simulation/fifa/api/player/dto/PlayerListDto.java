@@ -17,19 +17,21 @@ public class PlayerListDto {
     private PreferredFootEnum preferredFoot;
     private Integer leftFoot;
     private Integer rightFoot;
+    private Integer maxOverall;
     private Set<PlayerPriceListDto> priceList;
     private Average average;
     private SeasonListDto season;
     private Set<PositionDto> positions;
 
     @QueryProjection
-    public PlayerListDto(Long spId, String playerName, Integer pay, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, Set<PlayerPriceListDto> priceList, Average average, SeasonListDto season, Set<PositionDto> positions) {
+    public PlayerListDto(Long spId, String playerName, Integer pay, PreferredFootEnum preferredFoot, Integer leftFoot, Integer rightFoot, Integer maxOverall, Set<PlayerPriceListDto> priceList, Average average, SeasonListDto season, Set<PositionDto> positions) {
         this.spId = spId;
         this.playerName = playerName;
         this.pay = pay;
         this.preferredFoot = preferredFoot;
         this.leftFoot = leftFoot;
         this.rightFoot = rightFoot;
+        this.maxOverall = maxOverall;
         this.priceList = priceList;
         this.average = average;
         this.season = season;
