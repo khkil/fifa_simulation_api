@@ -14,7 +14,6 @@ import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.user.dto.UserDto;
 import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
 import com.simulation.fifa.api.user.dto.match.*;
-import com.simulation.fifa.api.user.dto.squad.UserSquadDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
 import com.simulation.fifa.util.SeleniumUtil;
@@ -27,7 +26,6 @@ import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -42,13 +40,15 @@ import java.util.stream.Stream;
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
-    @Value("${nexon.fifa-online.public-api-url}")
-    private String publicApiUrl;
-    @Value("${nexon.fifa-online.static-api-url}")
+    @Value("${nexon.fc-online.open-api-url}")
+    private String openApiUrl;
+    @Value("${nexon.fc-online.static-api-url}")
     private String staticApiUrl;
-    @Value("${nexon.fifa-online.site-url}")
+    @Value("${nexon.fc-online.site-url}")
     private String siteUrl;
-    @Value("${nexon.fifa-online.api-key}")
+    @Value("${nexon.fc-online.api-key.name}")
+    private String apiKeyName;
+    @Value("${nexon.fc-online.api-key}")
     private String apiKey;
 
     private final WebClient webClient;
@@ -66,14 +66,15 @@ public class UserService {
 
         List<UserMatchTopRankDto.origin> topRanksOrigin = webClient
                 .mutate()
-                .baseUrl(publicApiUrl)
+                .baseUrl(openApiUrl)
                 .build()
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/openapi/fconline/v1.0/users/" + user.getAccessId() + "/maxdivision")
+                        .path("/fconline/v1/user/maxdivision")
+                        .queryParam("ouid", user.getOuid())
                         .build()
                 )
-                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .header(apiKeyName, apiKey)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<UserMatchTopRankDto.origin>>() {
                 })
@@ -100,7 +101,7 @@ public class UserService {
     public List<UserTradeListDto> findUserTrades(String nickname, UserTradeRequestDto userTradeRequestDto) {
         UserDto user = getUserInfo(nickname);
 
-        List<UserTradeListDto> buyList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
+        List<UserTradeListDto> buyList = getUserTradeList(user.getOuid(), UserTradeRequestDto
                 .builder()
                 .tradeType("buy")
                 .offset(userTradeRequestDto.getOffset())
@@ -108,7 +109,7 @@ public class UserService {
                 .build()
         );
 
-        List<UserTradeListDto> sellList = getUserTradeList(user.getAccessId(), UserTradeRequestDto
+        List<UserTradeListDto> sellList = getUserTradeList(user.getOuid(), UserTradeRequestDto
                 .builder()
                 .tradeType("sell")
                 .offset(userTradeRequestDto.getOffset())
@@ -163,7 +164,7 @@ public class UserService {
         return joinedList;
     }
 
-    public SquadDto findUserSquad_new(String nickname) {
+    public SquadDto findUserSquad(String nickname) {
         ObjectMapper objectMapper = new ObjectMapper();
         WebDriver webDriver = SeleniumUtil.init();
 
@@ -209,72 +210,6 @@ public class UserService {
         }
     }
 
-    public List<UserSquadDto> findUserSquad(String nickname) {
-
-        UserDto searchedUser = getUserInfo(nickname);
-        List<String> matchIds = getUserMatchList(searchedUser.getAccessId(), UserMatchRequestDto
-                .builder()
-                .matchType(50) // 공식경기
-                .offset(0)
-                .limit(100)
-                .build()
-        );
-
-        List<UserMatchDetailDto.MatchInfo.Player> matchPlayers = new ArrayList<>();
-        for (String matchId : matchIds) {
-            if (!matchPlayers.isEmpty()) {
-                break;
-            }
-            log.info("유저 매치 상세 조회 시작");
-            UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
-            UserMatchDetailDto.MatchInfo searchedUserMatchInfo = matchDetail.getMatchInfo()
-                    .stream().filter(v -> v.getAccessId().equals(searchedUser.getAccessId())).toList()
-                    .stream().findAny().orElseThrow(() -> new UsernameNotFoundException("검색한 유저의 경기가 아닙니다."));
-
-            matchPlayers.addAll(searchedUserMatchInfo.getPlayer());
-        }
-
-        if (matchPlayers.isEmpty()) {
-            throw new RuntimeException("검색한 유저의 선수 정보가 존재하지 않습니다.");
-        }
-
-        List<Long> spIds = matchPlayers.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpId).toList();
-        List<Integer> grades = matchPlayers.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpGrade).toList();
-
-        List<Player> players = playerRepository.findAllByIdIn(spIds);
-
-        /*if (players.size() < matchPlayers.size()) {
-            List<Player> finalPlayers = players;
-            Set<Long> missedPlayers = matchPlayers.stream()
-                    .map(UserMatchDetailDto.MatchInfo.Player::getSpId)
-                    .filter(v -> !finalPlayers.stream().map(Player::getId).toList().contains(v))
-                    .collect(Collectors.toSet());
-
-            batchService.createPlayers(missedPlayers);
-
-            players = playerRepository.findAllByIdIn(spIds);
-        }*/
-
-        Map<Long, Player> playerMap = players.stream().collect(Collectors.toMap(Player::getId, p -> p));
-        Map<Long, Long> priceMap = playerPriceRepository.findRecentPriceList(spIds, grades).stream().collect(Collectors.toMap(PlayerRecentPriceDto::getPlayerId, PlayerRecentPriceDto::getPrice));
-        Map<Long, String> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getId, Position::getPositionName));
-        Map<Long, Integer> gradeMap = matchPlayers.stream().collect(Collectors.toMap(UserMatchDetailDto.MatchInfo.Player::getSpId, UserMatchDetailDto.MatchInfo.Player::getSpGrade));
-
-        return matchPlayers.stream().sorted((a, b) -> Math.toIntExact(a.getSpPosition() - b.getSpPosition())).map(v -> UserSquadDto
-                .builder()
-                .playerId(playerMap.get(v.getSpId()).getId())
-                .playerName(playerMap.get(v.getSpId()).getName())
-                .positionName(positionMap.get(v.getSpPosition()))
-                .pay(playerMap.get(v.getSpId()).getPay())
-                .seasonId(playerMap.get(v.getSpId()).getSeason().getId())
-                .seasonName(playerMap.get(v.getSpId()).getSeason().getName())
-                .seasonImgUrl(playerMap.get(v.getSpId()).getSeason().getImageUrl())
-                .grade(gradeMap.get(v.getSpId()))
-                .recentPrice(priceMap.get(v.getSpId()))
-                .build()
-        ).toList();
-    }
-
     public List<UserMatchDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
         UserDto user = getUserInfo(nickname);
 
@@ -282,7 +217,7 @@ public class UserService {
         int limit = 15;
         int offset = (page - 1) * limit;
 
-        List<String> matchIds = getUserMatchList(user.getAccessId(), UserMatchRequestDto
+        List<String> matchIds = getUserMatchList(user.getOuid(), UserMatchRequestDto
                 .builder()
                 .matchType(userMatchRequestDto.getMatchType())
                 .offset(offset)
@@ -367,17 +302,18 @@ public class UserService {
     private List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
         return webClient
                 .mutate()
-                .baseUrl(publicApiUrl)
+                .baseUrl(openApiUrl)
                 .build()
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/openapi/fconline/v1.0/users/" + accessId + "/matches")
+                        .path("/fconline/v1/user/match")
+                        .queryParam("ouid", accessId)
                         .queryParam("matchtype", userMatchRequestDto.getMatchType())
                         .queryParam("offset", userMatchRequestDto.getOffset())
                         .queryParam("limit", userMatchRequestDto.getLimit())
                         .build()
                 )
-                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .header(apiKeyName, apiKey)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<String>>() {
                 })
@@ -392,15 +328,15 @@ public class UserService {
     private UserDto getUserInfo(String nickname) {
         return webClient
                 .mutate()
-                .baseUrl(publicApiUrl)
+                .baseUrl(openApiUrl)
                 .build()
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/openapi/fconline/v1.0/users")
+                        .path("/fconline/v1/id")
                         .queryParam("nickname", nickname)
                         .build()
                 )
-                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .header(apiKeyName, apiKey)
                 .retrieve()
                 .bodyToMono(UserDto.class)
                 .onErrorResume(error -> {
@@ -413,14 +349,15 @@ public class UserService {
     private UserMatchDetailDto getUserMatchDetail(String matchId) {
         return webClient
                 .mutate()
-                .baseUrl(publicApiUrl)
+                .baseUrl(openApiUrl)
                 .build()
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/openapi/fconline/v1.0/matches/" + matchId.trim())
+                        .path("/fconline/v1/match-detail")
+                        .queryParam("matchid", matchId)
                         .build()
                 )
-                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .header(apiKeyName, apiKey)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<UserMatchDetailDto>() {
                 })
@@ -431,20 +368,20 @@ public class UserService {
                 .block();
     }
 
-    private List<UserTradeListDto> getUserTradeList(String accessId, UserTradeRequestDto userTradeRequestDto) {
+    private List<UserTradeListDto> getUserTradeList(String ouid, UserTradeRequestDto userTradeRequestDto) {
         List<UserTradeListDto> tradeList = webClient
                 .mutate()
-                .baseUrl(publicApiUrl)
+                .baseUrl(openApiUrl)
                 .build()
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/openapi/fconline/v1.0/users/" + accessId + "/markets")
+                        .path("/fconline/v1/user/trade")
                         .queryParam("tradetype", userTradeRequestDto.getTradeType())
                         .queryParam("offset", userTradeRequestDto.getOffset())
                         .queryParam("limit", userTradeRequestDto.getLimit())
                         .build()
                 )
-                .header(HttpHeaders.AUTHORIZATION, apiKey)
+                .header("x-nxopen-api-key", apiKey)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<UserTradeListDto>>() {
                 })

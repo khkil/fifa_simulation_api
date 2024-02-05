@@ -43,10 +43,12 @@
 ### 인증서
 
 - certbot 설치
-
     - sudo yum install certbot
+- 도메인 인증서 설치
+    - sudo systemctl stop nginx
     - sudo certbot certonly --standalone -d {DOMAIN}
-    - sudo chmod -R 755 /etc/letsencrypt/
+    - cd /etc/letsencrypt/live/{DOMAIN}
+    - sudo chmod -R 755 *
 
 - 자동갱신 등록
     - sudo yum install cronie

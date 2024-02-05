@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class UserDto {
-    private String accessId;
+    private String ouid;
     private String nickname;
     private Integer level;
     private List<UserMatchTopRankDto.desc> topRanks;

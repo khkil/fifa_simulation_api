@@ -35,7 +35,7 @@ public class UserController {
 
     @GetMapping("/squad")
     public ResponseEntity<ApiResponse<?>> findUserSquad_new(@RequestParam String nickname) {
-        SquadDto squadDto = userService.findUserSquad_new(nickname);
+        SquadDto squadDto = userService.findUserSquad(nickname);
 
         return ResponseEntity.ok(ApiResponse.createSuccess(squadDto));
     }

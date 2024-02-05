@@ -57,9 +57,9 @@ public class BatchService {
     public final int ONCE_CREATE_PLAYER_COUNT = 100; // 선수 배치 저장시 한번에 저장될 갯수
     public final int ONCE_CREATE_PLAYER_PRICE_COUNT = 6000; // 선수 데일리 시세 저장시 한번에 저장될 갯수
 
-    @Value("${nexon.fifa-online.site-url}")
+    @Value("${nexon.fc-online.site-url}")
     private String siteUrl;
-    @Value("${nexon.fifa-online.static-api-url}")
+    @Value("${nexon.fc-online.static-api-url}")
     private String staticApiUrl;
 
     private final WebClient webClient;
