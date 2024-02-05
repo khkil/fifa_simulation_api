@@ -25,7 +25,6 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -58,7 +57,7 @@ public class UserService {
     private final BatchService batchService;
 
     public UserDto findUserInfo(String nickname) {
-        UserDto user = getUserInfo(nickname);
+        UserDto user = getUserOuid(nickname);
         List<DivisionDto> divisions = getDivisions();
 
         Map<Integer, String> matchTypeMap = getMatchTypes().stream().collect(Collectors.toMap(MatchTypeDto::getMatchtype, MatchTypeDto::getDesc));
@@ -99,7 +98,7 @@ public class UserService {
     }
 
     public List<UserTradeListDto> findUserTrades(String nickname, UserTradeRequestDto userTradeRequestDto) {
-        UserDto user = getUserInfo(nickname);
+        UserDto user = getUserOuid(nickname);
 
         List<UserTradeListDto> buyList = getUserTradeList(user.getOuid(), UserTradeRequestDto
                 .builder()
@@ -211,7 +210,7 @@ public class UserService {
     }
 
     public List<UserMatchDto> findUserMatchList(String nickname, UserMatchRequestDto userMatchRequestDto) {
-        UserDto user = getUserInfo(nickname);
+        UserDto user = getUserOuid(nickname);
 
         int page = userMatchRequestDto.getPage();
         int limit = 15;
@@ -325,7 +324,7 @@ public class UserService {
     }
 
 
-    private UserDto getUserInfo(String nickname) {
+    private UserDto getUserOuid(String nickname) {
         return webClient
                 .mutate()
                 .baseUrl(openApiUrl)
