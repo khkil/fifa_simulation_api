@@ -114,7 +114,7 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 .join(playerPrice.player, player)
                 .where(playerPrice.date.between(start, end), playerGradeConditions)
                 .groupBy(playerPrice.date)
-                .orderBy(playerPrice.date.desc())
+                .orderBy(playerPrice.date.asc())
                 .fetch();
 
     }

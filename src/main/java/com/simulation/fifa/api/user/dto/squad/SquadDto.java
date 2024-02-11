@@ -17,6 +17,7 @@ public class SquadDto {
     private Map<String, Integer> ovr;
     private List<Player> players;
     private List<TotalPrice> totalPriceList;
+    private TotalTeamColor totalTeamColor;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -44,6 +45,30 @@ public class SquadDto {
             this.totalPrice = totalPrice;
             this.date = date;
         }
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class TotalTeamColor {
+        private Map<Integer, TeamColor> affiliation;
+        private Map<Integer, TeamColor> enhance;
+
+        @Data
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class TeamColor {
+            private int lv;
+            private String name;
+            private String skill;
+            private String image;
+            private int playercnt;
+            private List<Integer> playerlist;
+        }
+
+//        @Data
+//        public static class Affiliation {
+//            private Map<Integer, TeamColor> test;
+//        }
+
     }
 
     public void updateTotalPrice(List<TotalPrice> totalPriceList) {
