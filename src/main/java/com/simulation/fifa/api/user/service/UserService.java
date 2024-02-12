@@ -32,6 +32,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -168,6 +169,7 @@ public class UserService {
         WebDriver webDriver = SeleniumUtil.init();
 
         String userHiddenNo = getHiddenGuestNo(nickname);
+        List<String> positionNames = positionRepository.findAll().stream().map(Position::getPositionName).toList();
 
         try {
             webDriver.get("https://fconline.nexon.com/profile/squad/popup/" + userHiddenNo);
@@ -183,8 +185,10 @@ public class UserService {
                 if (time == 5000) { // 5초간 쓰레드 대기시 에러 처리
                     throw new RuntimeException("스쿼드 조회 소요시간 초과");
                 } else if (players.isEmpty()) {
+                    System.out.println("로딩중..");
                     Thread.sleep(100);
                 } else {
+                    System.out.println("조회성공");
                     break;
                 }
             }
@@ -198,7 +202,8 @@ public class UserService {
             LocalDate end = LocalDate.now().minusDays(1);
             List<SquadDto.TotalPrice> priceList = playerPriceRepository.findPlayerPriceByIdsAndDateBetween(squad.getPlayers(), start, end);
 
-            squad.updateTotalPrice(priceList);
+            squad.updateTotalPrice(priceList); // DB에서 선수 가격 조회 후 적용
+            squad.getPlayers().sort(Comparator.comparingInt(a -> positionNames.indexOf(a.getRole().toUpperCase()))); // 포지션 index 별 Sort
 
             return squad;
 
