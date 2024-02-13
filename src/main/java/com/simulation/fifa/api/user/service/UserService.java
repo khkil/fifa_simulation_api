@@ -16,6 +16,7 @@ import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
 import com.simulation.fifa.api.user.dto.match.*;
 import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
 import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
+import com.simulation.fifa.api.user.exception.NicknameNotFoundException;
 import com.simulation.fifa.util.SeleniumUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,6 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -185,10 +185,8 @@ public class UserService {
                 if (time == 5000) { // 5초간 쓰레드 대기시 에러 처리
                     throw new RuntimeException("스쿼드 조회 소요시간 초과");
                 } else if (players.isEmpty()) {
-                    System.out.println("로딩중..");
                     Thread.sleep(100);
                 } else {
-                    System.out.println("조회성공");
                     break;
                 }
             }
@@ -208,7 +206,7 @@ public class UserService {
             return squad;
 
         } catch (Exception e) {
-            throw new RuntimeException("공홈 유저 스쿼드 조회 실패 \n", e);
+            throw new RuntimeException("공홈 유저 스쿼드 조회 실패", e);
         } finally {
             webDriver.quit();
         }
@@ -295,11 +293,16 @@ public class UserService {
                     .get();
 
             String ogUrl = document.select("meta[property=og:url]").attr("content");
-            String[] arr = ogUrl.split("/");
-            return arr[arr.length - 1];
+            String[] ogUrlArr = ogUrl.split("/");
+            String hiddenGuestNo = ogUrlArr[ogUrlArr.length - 1];
+
+            if (hiddenGuestNo.isEmpty()) {
+                throw new NicknameNotFoundException();
+            }
+            return hiddenGuestNo;
 
         } catch (IOException e) {
-            throw new RuntimeException("유저 히든 아이디 조회 실패", e);
+            throw new RuntimeException("유저 아이디 조회 실패", e);
         }
     }
 
@@ -345,7 +348,7 @@ public class UserService {
                 .bodyToMono(UserDto.class)
                 .onErrorResume(error -> {
                     log.error("{0}", error);
-                    return Mono.error(new RuntimeException("닉네임 : " + nickname + " 유저이름 조회 실패"));
+                    return Mono.error(new NicknameNotFoundException(error));
                 })
                 .block();
     }
