@@ -241,6 +241,7 @@ public class UserService {
                                             .nickname(matchInfo.getNickname())
                                             .goal(matchInfo.getShoot().getGoalTotal())
                                             .matchResult(matchInfo.getMatchDetail().getMatchResult())
+                                            .matchEndType(matchInfo.getMatchDetail().getMatchEndType())
                                             .controller(matchInfo.getMatchDetail().getController())
                                             .build()
                                     ).toList()
@@ -248,6 +249,7 @@ public class UserService {
                             .build();
                 })
                 .toList();
+        //.stream().filter(v -> v.getUsers().size() == 2).toList(); // nexon api 유저 1명만 불러오는 버그로 인해 filter 처리
     }
 
     public UserMatchDetailDto findUserMatchByMatchId(String matchId) {
@@ -306,7 +308,7 @@ public class UserService {
         }
     }
 
-    private List<String> getUserMatchList(String accessId, UserMatchRequestDto userMatchRequestDto) {
+    private List<String> getUserMatchList(String ouid, UserMatchRequestDto userMatchRequestDto) {
         return webClient
                 .mutate()
                 .baseUrl(openApiUrl)
@@ -314,7 +316,7 @@ public class UserService {
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/fconline/v1/user/match")
-                        .queryParam("ouid", accessId)
+                        .queryParam("ouid", ouid)
                         .queryParam("matchtype", userMatchRequestDto.getMatchType())
                         .queryParam("offset", userMatchRequestDto.getOffset())
                         .queryParam("limit", userMatchRequestDto.getLimit())

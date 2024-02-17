@@ -47,6 +47,7 @@ public class UserMatchDetailDto {
             private String positionName;
             private int spGrade;
             private long price;
+            private Integer overall;
             private Status status;
 
             @Data

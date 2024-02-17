@@ -21,6 +21,7 @@ public class UserMatchDto {
         private String accessId;
         private String nickname;
         private String matchResult;
+        private int matchEndType;
         private Integer goal;
         private String controller;
     }
