@@ -1,6 +1,7 @@
 package com.simulation.fifa.api.player.repository;
 
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
+import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
 import com.simulation.fifa.api.player.dto.PlayerDetailDto;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
@@ -18,4 +19,6 @@ public interface PlayerRepositoryCustom {
     Optional<PlayerDetailDto> findByIdCustom(Long id);
 
     List<CheckPlayerPriceDto> findCheckPrice();
+
+    Page<PlayerByOverallDto> findByOverall(Integer overall, Pageable pageable);
 }

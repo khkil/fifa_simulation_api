@@ -2,6 +2,7 @@ package com.simulation.fifa.api.player.controller;
 
 import com.simulation.fifa.api.common.ApiResponse;
 import com.simulation.fifa.api.player.PlayerService;
+import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
 import com.simulation.fifa.api.player.dto.PlayerDetailDto;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
@@ -41,5 +42,11 @@ public class PlayerController {
     public ResponseEntity<ApiResponse<?>> findPriceWave(Pageable pageable) {
         List<PlayerPriceWaveDto> priceRanks = playerPriceService.findPriceRanks(pageable);
         return ResponseEntity.ok(ApiResponse.createSuccess(priceRanks));
+    }
+
+    @GetMapping("/overall/{overall}")
+    public ResponseEntity<ApiResponse<?>> findByOverall(@PathVariable Integer overall, Pageable pageable) {
+        Page<PlayerByOverallDto> priceList = playerService.findByOverall(overall, pageable);
+        return ResponseEntity.ok(ApiResponse.createSuccess(priceList));
     }
 }

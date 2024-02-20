@@ -1,5 +1,6 @@
 package com.simulation.fifa.api.player;
 
+import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
 import com.simulation.fifa.api.player.dto.PlayerDetailDto;
 import com.simulation.fifa.api.player.dto.PlayerListDto;
 import com.simulation.fifa.api.player.dto.PlayerSearchDto;
@@ -23,5 +24,9 @@ public class PlayerService {
 
     public PlayerDetailDto findById(Long id) {
         return playerRepository.findByIdCustom(id).orElseThrow(() -> new UsernameNotFoundException("해당 선수를 찾을수 없습니다."));
+    }
+
+    public Page<PlayerByOverallDto> findByOverall(Integer overall, Pageable pageable) {
+        return playerRepository.findByOverall(overall, pageable);
     }
 }

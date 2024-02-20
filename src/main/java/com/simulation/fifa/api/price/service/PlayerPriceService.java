@@ -1,7 +1,7 @@
 package com.simulation.fifa.api.price.service;
 
 import com.simulation.fifa.api.price.dto.PlayerPriceWaveDto;
-import com.simulation.fifa.api.price.dto.PriceOverallDto;
+import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
 import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,9 +17,5 @@ public class PlayerPriceService {
 
     public List<PlayerPriceWaveDto> findPriceRanks(Pageable pageable) {
         return playerPriceRepository.findPriceRanks(pageable);
-    }
-
-    public Page<PriceOverallDto> findByOverall(Integer overall, Pageable pageable) {
-        return playerPriceRepository.findByOverall(overall, pageable);
     }
 }

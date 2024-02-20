@@ -5,11 +5,12 @@ import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
+import com.simulation.fifa.api.player.dto.QPlayerByOverallDto;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.*;
 import com.simulation.fifa.api.price.entity.QPlayerPrice;
 import com.simulation.fifa.api.season.dto.QSeasonListDto;
-import com.simulation.fifa.api.season.entity.Season;
 import com.simulation.fifa.api.user.dto.squad.QSquadDto_TotalPrice;
 import com.simulation.fifa.api.user.dto.squad.SquadDto;
 
@@ -168,84 +169,5 @@ public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {
                 )
                 .limit(10)
                 .fetch();
-    }
-
-    @Override
-    public Page<PriceOverallDto> findByOverall(Integer overall, Pageable pageable) {
-        LocalDate recentDate = jpaQueryFactory
-                .select(playerPrice.date)
-                .from(playerPrice)
-                .orderBy(playerPrice.date.desc())
-                .fetchFirst();
-
-        List<Long> usedSeasonIds = jpaQueryFactory.select(season.id).from(season).where(season.useSimulation.eq(true)).fetch();
-
-        Predicate[] whereConditions = new Predicate[]{
-                playerPrice.grade.loe(7), // 강화 재료 표시 > 1~7강 까지만
-                calculateOverallByGrade(player.maxOverall).eq(overall),
-                playerPrice.date.eq(recentDate),
-                season.id.in(usedSeasonIds)
-        };
-
-        List<Long> playerIds = jpaQueryFactory
-                .select(playerPrice.id)
-                .from(playerPrice)
-                .leftJoin(playerPrice.player, player)
-                .leftJoin(player.season, season)
-                .where(whereConditions)
-                .orderBy(playerPrice.price.asc(), player.id.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-
-
-        List<PriceOverallDto> list = jpaQueryFactory
-                .selectFrom(playerPrice)
-                .leftJoin(playerPrice.player, player)
-                .leftJoin(player.season, season)
-                .leftJoin(player.playerPositionAssociations, playerPositionAssociation)
-                .leftJoin(playerPositionAssociation.position, position)
-                .where(playerPrice.id.in(playerIds))
-                .orderBy(playerPrice.price.asc(), player.id.desc())
-                .transform(groupBy(player.id).list(
-                        new QPriceOverallDto(
-                                player.id,
-                                player.name,
-                                calculateOverallByGrade(player.maxOverall),
-                                playerPrice.price,
-                                playerPrice.grade,
-                                new QSeasonListDto(
-                                        season.id,
-                                        season.name,
-                                        season.imageUrl
-                                ),
-                                set(new QPositionDto(position.positionName, calculateOverallByGrade(playerPositionAssociation.overall)))
-                        )
-                ));
-
-        Long count = jpaQueryFactory
-                .select(playerPrice.count())
-                .from(playerPrice)
-                .leftJoin(playerPrice.player, player)
-                .leftJoin(player.season, season)
-                .where(whereConditions)
-                .fetchOne();
-
-        return new PageImpl<>(list, pageable, count);
-    }
-
-    private NumberExpression<Integer> calculateOverallByGrade(NumberExpression<Integer> overall) {
-        NumberExpression<Integer> plusStat = new CaseBuilder()
-                .when(playerPrice.grade.eq(2)).then(1)
-                .when(playerPrice.grade.eq(3)).then(2)
-                .when(playerPrice.grade.eq(4)).then(4)
-                .when(playerPrice.grade.eq(5)).then(6)
-                .when(playerPrice.grade.eq(6)).then(8)
-                .when(playerPrice.grade.eq(7)).then(11)
-                .when(playerPrice.grade.eq(8)).then(15)
-                .when(playerPrice.grade.eq(9)).then(19)
-                .when(playerPrice.grade.eq(10)).then(24)
-                .otherwise(0);
-        return overall.add(plusStat);
     }
 }
