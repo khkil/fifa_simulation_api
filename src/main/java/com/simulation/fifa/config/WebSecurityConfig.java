@@ -28,7 +28,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 .cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowCredentials(false);
-                    config.setAllowedOrigins(List.of("http://localhost:3098", "https://fc-on.com"));
+                    //config.setAllowedOrigins(List.of("http://localhost:3098", "https://fc-on.com"));
+                    config.setAllowedOriginPatterns(Collections.singletonList("*"));
                     config.setAllowedMethods(Collections.singletonList("*"));
                     config.setAllowedHeaders(Collections.singletonList("*"));
                     return config;
