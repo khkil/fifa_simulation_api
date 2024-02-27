@@ -251,7 +251,7 @@ public class BatchService {
                             .build();
                     playerPriceList.add(nowPlayerPrice);
                 }
-                log.info("시세 생성 진행률 {}", (float) i / totalCount * 100);
+                //log.info("시세 생성 진행률 {}", (float) i / totalCount * 100);
             }
         } catch (IOException e) {
             log.error("시세 생성 오류 {0}", e);
