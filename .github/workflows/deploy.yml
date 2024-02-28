@@ -55,7 +55,7 @@ jobs:
             
             if [ -z "$PID" ]; then
               # 해당 포트를 사용하는 프로세스가 없으면 그냥 실행
-              nohup java -jar $JAR_PATH --server.port=$PORT --spring.profiles.active=$PROFILE &
+	      nohup java -Dspring.profiles.active=$PROFILE -jar $JAR_PATH &
               echo "Application started on port $PORT with profile $PROFILE."
             else
               # 해당 포트를 사용하는 프로세스가 있으면 종료 후 실행
@@ -63,7 +63,7 @@ jobs:
               kill -9 $PID
               sleep 5
               echo "Starting application on port $PORT..."
-              nohup java -jar $JAR_PATH --server.port=$PORT --spring.profiles.active=$PROFILE  &
+              nohup java -Dspring.profiles.active=$PROFILE -jar $JAR_PATH &
               echo "Application restarted on port $PORT with profile $PROFILE."
             fi
 
