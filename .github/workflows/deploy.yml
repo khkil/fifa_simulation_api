@@ -37,25 +37,25 @@ jobs:
             # 포트
             PORT=8085
             # 프로필
-            PROFILE="prod, security"
-            
+            PROFILE="prod,security"
+
             # 폴더로 이동
             cd /home/ec2-user/fc-on/api
-            
+
             # 소스 코드 업데이트
             echo "Pulling the latest changes from Git..."
             git pull
-            
+
             # 빌드
             echo "Building the project..."
             ./gradlew build
-            
+
             # 현재 실행 중인 프로세스 ID 확인
             PID=$(lsof -ti :$PORT)
-            
+
             if [ -z "$PID" ]; then
               # 해당 포트를 사용하는 프로세스가 없으면 그냥 실행
-	      nohup java -Dspring.profiles.active=$PROFILE -jar $JAR_PATH &
+              nohup java -Dspring.profiles.active=$PROFILE -jar $JAR_PATH &
               echo "Application started on port $PORT with profile $PROFILE."
             else
               # 해당 포트를 사용하는 프로세스가 있으면 종료 후 실행
@@ -66,7 +66,6 @@ jobs:
               nohup java -Dspring.profiles.active=$PROFILE -jar $JAR_PATH &
               echo "Application restarted on port $PORT with profile $PROFILE."
             fi
-
       - name: Remove Github Actions IP From Security Group
         run: |
           aws ec2 revoke-security-group-ingress --group-id ${{ secrets.AWS_AUTHORIZATION_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
