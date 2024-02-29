@@ -182,7 +182,7 @@ public class UserService {
 
                 time += 100;
 
-                if (time == 5000) { // 5초간 쓰레드 대기시 에러 처리
+                if (time == 10000) { // 10초간 쓰레드 대기시 에러 처리
                     throw new RuntimeException("스쿼드 조회 소요시간 초과");
                 } else if (players.isEmpty()) {
                     Thread.sleep(100);
