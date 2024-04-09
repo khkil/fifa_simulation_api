@@ -1,2 +1,2 @@
 # fifa_silmulation_api
-fifa online silmulation api
+SITE github : https://github.com/khkil/fifa_simulation_site
