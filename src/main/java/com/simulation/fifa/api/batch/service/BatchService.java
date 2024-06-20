@@ -231,8 +231,7 @@ public class BatchService {
         long startTime = System.currentTimeMillis();
 
         try {
-            for (int i = 0; i < notRenewalPlayers.size(); i++) {
-                long playerId = notRenewalPlayers.get(i);
+            for (Long playerId : notRenewalPlayers) {
                 //for (Long playerId : notRenewalPlayers.subList(0, totalCount)) {
                 for (int j = 1; j <= MAX_UPGRADE_VALUE; j++) {
                     Document document = Jsoup.connect(siteUrl + "/datacenter/PlayerPriceGraph")
@@ -257,7 +256,7 @@ public class BatchService {
             log.error("시세 생성 오류 {0}", e);
         } finally {
             long jsoupParseEndTime = System.currentTimeMillis();
-            playerPriceRepository.saveAll(playerPriceList);
+            //playerPriceRepository.saveAll(playerPriceList);
 
             log.info("JSOUP 파싱 시간: {}s", (jsoupParseEndTime - startTime) / 1000);
             log.info("{} 일자, {}건 시세 생성, 소요 시간 : {}s", date, totalCount, (System.currentTimeMillis() - startTime) / 1000);
