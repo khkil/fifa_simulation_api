@@ -1,26 +1,25 @@
-package com.simulation.fifa.api.associations.entity;
+package com.simulation.fifa.api.associations;
 
 import com.simulation.fifa.api.player.entity.Player;
-import com.simulation.fifa.api.skill.entity.Skill;
+import com.simulation.fifa.api.position.entity.Position;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
-public class PlayerSkillAssociation {
+public class PlayerPositionAssociation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private Integer overall;
 
     @ManyToOne
     private Player player;
 
     @ManyToOne
-    private Skill skill;
+    private Position position;
 }

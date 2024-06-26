@@ -1,20 +1,20 @@
 package com.simulation.fifa.api.auth.service;
 
 import com.simulation.fifa.api.auth.dto.KakaoTokenResponseDto;
-import com.simulation.fifa.api.auth.dto.KakaoUserResponseDto;
-import com.simulation.fifa.api.user.entity.User;
+import com.simulation.fifa.api.auth.dto.KakaoLoginRequestDto;
+import com.simulation.fifa.api.auth.dto.KakaoLoginResponseDto;
 import com.simulation.fifa.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
-@Service
+@Qualifier("kakao")
+@Component
 @RequiredArgsConstructor
-public class AuthKakaoService {
+public class OAuth2Kakao2ServiceImpl implements OAuth2Service<KakaoLoginResponseDto, KakaoLoginRequestDto> {
     private final WebClient webClient;
     private final UserRepository userRepository;
 
@@ -23,12 +23,12 @@ public class AuthKakaoService {
     @Value("${oauth.kakao.redirect-url}")
     private String redirectUrl;
 
-    public void kakaoLogin(String code) {
-        KakaoTokenResponseDto tokenInfo = getTokenInfo(code);
+    @Override
+    public KakaoLoginResponseDto login(KakaoLoginRequestDto params) {
+        KakaoTokenResponseDto tokenInfo = getTokenInfo(params.getCode());
 
         String bearerToken = tokenInfo.getToken_type() + " " + tokenInfo.getAccess_token();
-
-        KakaoUserResponseDto userInfo = getUserInfo(bearerToken);
+        KakaoLoginResponseDto userInfo = getUserInfo(bearerToken);
 
         String kakaoAccountId = userInfo.getId();
 
@@ -37,8 +37,14 @@ public class AuthKakaoService {
         }, () -> {
 
         });
-
+        return null;
     }
+
+    @Override
+    public void test() {
+        System.out.println("카카오");
+    }
+
 
     private KakaoTokenResponseDto getTokenInfo(String code) {
         String grantType = "authorization_code";
@@ -62,7 +68,7 @@ public class AuthKakaoService {
                 .block();
     }
 
-    private KakaoUserResponseDto getUserInfo(String token) {
+    private KakaoLoginResponseDto getUserInfo(String token) {
         return webClient
                 .mutate()
                 .baseUrl("https://kapi.kakao.com")
@@ -71,7 +77,7 @@ public class AuthKakaoService {
                 .uri("/v2/user/me")
                 .header("Authorization", token)
                 .retrieve()
-                .bodyToMono(KakaoUserResponseDto.class)
+                .bodyToMono(KakaoLoginResponseDto.class)
                 .block();
     }
 }

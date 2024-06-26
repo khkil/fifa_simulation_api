@@ -1,6 +1,6 @@
 package com.simulation.fifa.api.position.entity;
 
-import com.simulation.fifa.api.associations.entity.PlayerPositionAssociation;
+import com.simulation.fifa.api.associations.PlayerPositionAssociation;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;

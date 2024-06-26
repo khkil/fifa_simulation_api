@@ -29,7 +29,6 @@ import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
 import static com.simulation.fifa.api.season.entity.QSeason.season;
 import static com.simulation.fifa.api.position.entity.QPosition.position;
-import static com.simulation.fifa.api.associations.entity.QPlayerPositionAssociation.playerPositionAssociation;
 
 @RequiredArgsConstructor
 public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {

@@ -1,14 +1,13 @@
 package com.simulation.fifa.api.player.entity;
 
-import com.simulation.fifa.api.associations.entity.PlayerClubAssociation;
-import com.simulation.fifa.api.associations.entity.PlayerPositionAssociation;
-import com.simulation.fifa.api.associations.entity.PlayerSkillAssociation;
+import com.simulation.fifa.api.associations.PlayerClubAssociation;
+import com.simulation.fifa.api.associations.PlayerPositionAssociation;
+import com.simulation.fifa.api.associations.PlayerSkillAssociation;
 import com.simulation.fifa.api.nation.entity.Nation;
 import com.simulation.fifa.api.price.entity.PlayerPrice;
 import com.simulation.fifa.api.season.entity.Season;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.domain.Persistable;
 
 import java.util.Set;
 

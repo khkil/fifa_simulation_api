@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.associations.entity;
+package com.simulation.fifa.api.associations;
 
 import com.simulation.fifa.api.club.entity.Club;
 import com.simulation.fifa.api.player.entity.Player;

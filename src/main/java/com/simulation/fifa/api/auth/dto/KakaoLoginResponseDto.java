@@ -3,7 +3,7 @@ package com.simulation.fifa.api.auth.dto;
 import lombok.Data;
 
 @Data
-public class KakaoUserResponseDto {
+public class KakaoLoginResponseDto {
     private String id;
     private String connected_at;
     private KakaoAccount kakao_account;
@@ -11,8 +11,13 @@ public class KakaoUserResponseDto {
     @Data
     public static class KakaoAccount {
 
-        private String name;
         private String email;
-        private String phone_number;
+        private Profile profile;
+
+
+        @Data
+        private static class Profile {
+            private String nickname;
+        }
     }
 }
