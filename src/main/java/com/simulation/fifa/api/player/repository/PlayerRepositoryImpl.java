@@ -2,47 +2,39 @@ package com.simulation.fifa.api.player.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.Path;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.simulation.fifa.api.associations.QPlayerClubAssociation;
 import com.simulation.fifa.api.batch.dto.CheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto;
 import com.simulation.fifa.api.batch.dto.QCheckPlayerPriceDto_Date;
-import com.simulation.fifa.api.club.dto.QClubListDto;
-
 import com.simulation.fifa.api.player.dto.*;
-import com.simulation.fifa.api.position.dto.PositionDto;
 import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.QPlayerPriceListDto;
-
 import com.simulation.fifa.api.season.dto.QSeasonListDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.querydsl.core.group.GroupBy.*;
 import static com.simulation.fifa.api.associations.QPlayerClubAssociation.playerClubAssociation;
 import static com.simulation.fifa.api.associations.QPlayerPositionAssociation.playerPositionAssociation;
 import static com.simulation.fifa.api.associations.QPlayerSkillAssociation.playerSkillAssociation;
+import static com.simulation.fifa.api.club.entity.QClub.club;
+import static com.simulation.fifa.api.nation.entity.QNation.nation;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.position.entity.QPosition.position;
-import static com.simulation.fifa.api.season.entity.QSeason.season;
-import static com.simulation.fifa.api.club.entity.QClub.club;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
+import static com.simulation.fifa.api.season.entity.QSeason.season;
 import static com.simulation.fifa.api.skill.entity.QSkill.skill;
-import static com.simulation.fifa.api.nation.entity.QNation.nation;
 
 @RequiredArgsConstructor
 public class PlayerRepositoryImpl implements PlayerRepositoryCustom {

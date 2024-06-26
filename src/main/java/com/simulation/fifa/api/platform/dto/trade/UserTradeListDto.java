@@ -1,6 +1,5 @@
-package com.simulation.fifa.api.user.dto.trade;
+package com.simulation.fifa.api.platform.dto.trade;
 
-import com.querydsl.core.annotations.QueryProjection;
 import com.simulation.fifa.api.season.dto.SeasonListDto;
 import lombok.Data;
 

@@ -1,8 +1,8 @@
-package com.simulation.fifa.api.auth.service;
+package com.simulation.fifa.api.user.service;
 
-import com.simulation.fifa.api.auth.dto.KakaoTokenResponseDto;
-import com.simulation.fifa.api.auth.dto.KakaoLoginRequestDto;
-import com.simulation.fifa.api.auth.dto.KakaoLoginResponseDto;
+import com.simulation.fifa.api.user.dto.KakaoTokenResponseDto;
+import com.simulation.fifa.api.user.dto.KakaoLoginRequestDto;
+import com.simulation.fifa.api.user.dto.KakaoLoginResponseDto;
 import com.simulation.fifa.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;

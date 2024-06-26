@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.dto.squad;
+package com.simulation.fifa.api.platform.dto.squad;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

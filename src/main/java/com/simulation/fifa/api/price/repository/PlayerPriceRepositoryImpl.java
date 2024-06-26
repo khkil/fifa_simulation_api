@@ -1,22 +1,14 @@
 package com.simulation.fifa.api.price.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
-import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
-import com.simulation.fifa.api.player.dto.QPlayerByOverallDto;
-import com.simulation.fifa.api.position.dto.QPositionDto;
 import com.simulation.fifa.api.price.dto.*;
 import com.simulation.fifa.api.price.entity.QPlayerPrice;
-import com.simulation.fifa.api.season.dto.QSeasonListDto;
-import com.simulation.fifa.api.user.dto.squad.QSquadDto_TotalPrice;
-import com.simulation.fifa.api.user.dto.squad.SquadDto;
+import com.simulation.fifa.api.platform.dto.squad.QSquadDto_TotalPrice;
+import com.simulation.fifa.api.platform.dto.squad.SquadDto;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
@@ -28,7 +20,6 @@ import static com.querydsl.core.group.GroupBy.*;
 import static com.simulation.fifa.api.player.entity.QPlayer.player;
 import static com.simulation.fifa.api.price.entity.QPlayerPrice.playerPrice;
 import static com.simulation.fifa.api.season.entity.QSeason.season;
-import static com.simulation.fifa.api.position.entity.QPosition.position;
 
 @RequiredArgsConstructor
 public class PlayerPriceRepositoryImpl implements PlayerPriceRepositoryCustom {

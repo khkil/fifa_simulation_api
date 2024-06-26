@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.auth.dto;
+package com.simulation.fifa.api.user.dto;
 
 import lombok.Data;
 

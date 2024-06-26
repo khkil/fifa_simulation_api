@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.dto.squad;
+package com.simulation.fifa.api.platform.dto.squad;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.querydsl.core.annotations.QueryProjection;

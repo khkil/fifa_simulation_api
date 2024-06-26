@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.dto.trade;
+package com.simulation.fifa.api.platform.dto.trade;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

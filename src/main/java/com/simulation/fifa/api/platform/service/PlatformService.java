@@ -1,8 +1,8 @@
-package com.simulation.fifa.api.user.service;
+package com.simulation.fifa.api.platform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simulation.fifa.api.batch.service.BatchService;
-import com.simulation.fifa.api.user.dto.squad.SquadDto;
+import com.simulation.fifa.api.platform.dto.squad.SquadDto;
 import com.simulation.fifa.api.player.entity.Player;
 import com.simulation.fifa.api.player.repository.PlayerRepository;
 import com.simulation.fifa.api.position.entity.Position;
@@ -11,12 +11,12 @@ import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
 import com.simulation.fifa.api.price.repository.PlayerPriceRepository;
 import com.simulation.fifa.api.season.dto.SeasonListDto;
 import com.simulation.fifa.api.season.entity.Season;
-import com.simulation.fifa.api.user.dto.UserDto;
-import com.simulation.fifa.api.user.dto.UserMatchTopRankDto;
-import com.simulation.fifa.api.user.dto.match.*;
-import com.simulation.fifa.api.user.dto.trade.UserTradeListDto;
-import com.simulation.fifa.api.user.dto.trade.UserTradeRequestDto;
-import com.simulation.fifa.api.user.exception.NicknameNotFoundException;
+import com.simulation.fifa.api.platform.dto.UserDto;
+import com.simulation.fifa.api.platform.dto.UserMatchTopRankDto;
+import com.simulation.fifa.api.platform.dto.match.*;
+import com.simulation.fifa.api.platform.dto.trade.UserTradeListDto;
+import com.simulation.fifa.api.platform.dto.trade.UserTradeRequestDto;
+import com.simulation.fifa.api.platform.exception.NicknameNotFoundException;
 import com.simulation.fifa.util.SeleniumUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserService {
+public class PlatformService {
     @Value("${nexon.fc-online.open-api-url}")
     private String openApiUrl;
     @Value("${nexon.fc-online.static-api-url}")
@@ -252,14 +252,15 @@ public class UserService {
         //.stream().filter(v -> v.getUsers().size() == 2).toList(); // nexon api 유저 1명만 불러오는 버그로 인해 filter 처리
     }
 
-    public UserMatchDetailDto findUserMatchByMatchId(String matchId) {
+    public UserMatchDetailDto findUserMatchDetail(String matchId) {
         UserMatchDetailDto matchDetail = getUserMatchDetail(matchId);
         Map<Long, String> positionMap = positionRepository.findAll().stream().collect(Collectors.toMap(Position::getId, Position::getPositionName));
 
         for (UserMatchDetailDto.MatchInfo matchInfo : matchDetail.getMatchInfo()) {
             List<UserMatchDetailDto.MatchInfo.Player> players = matchInfo.getPlayer()
                     .stream().filter(v -> v.getSpPosition() != 28).toList() // SUB 포지션 제외
-                    .stream().sorted((a, b) -> b.getSpPosition() > a.getSpPosition() ? 1 : -1).toList();
+                    //.stream().sorted((a, b) -> b.getSpPosition() > a.getSpPosition() ? 1 : -1).toList();
+                    .stream().sorted((a, b) -> Math.toIntExact(b.getSpPosition() - a.getSpPosition())).toList();
             List<Long> spIdList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpId).toList();
             List<Integer> gradeList = players.stream().map(UserMatchDetailDto.MatchInfo.Player::getSpGrade).toList();
 

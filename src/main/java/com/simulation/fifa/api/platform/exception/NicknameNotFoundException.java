@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.exception;
+package com.simulation.fifa.api.platform.exception;
 
 import lombok.Getter;
 

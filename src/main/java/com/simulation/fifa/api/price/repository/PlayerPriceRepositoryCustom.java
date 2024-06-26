@@ -1,10 +1,8 @@
 package com.simulation.fifa.api.price.repository;
 
-import com.simulation.fifa.api.player.dto.PlayerByOverallDto;
 import com.simulation.fifa.api.price.dto.PlayerPriceWaveDto;
-import com.simulation.fifa.api.user.dto.squad.SquadDto;
+import com.simulation.fifa.api.platform.dto.squad.SquadDto;
 import com.simulation.fifa.api.price.dto.PlayerRecentPriceDto;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;

@@ -1,4 +1,4 @@
-package com.simulation.fifa.api.user.dto.match;
+package com.simulation.fifa.api.platform.dto.match;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
